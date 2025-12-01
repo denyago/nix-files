@@ -1,5 +1,12 @@
 { config, pkgs, ... }:
 
+let
+  # LazyVim starter config straight from GitHub
+  lazyvim-config = builtins.fetchGit {
+    url = "https://github.com/LazyVim/starter.git";
+    rev = "803bc181d7c0d6d5eeba9274d9be49b287294d99";
+  };
+in
 {
   home.stateVersion = "24.11";
 
@@ -26,8 +33,6 @@
       # Locale
       export LANG=en_US.UTF-8
 
-      export EDITOR='nvim'
-
       # iTerm2 integration (from YADR)
       if [ -f "$HOME/.yadr/zsh/iterm2_shell_integration.zsh" ]; then
         source "$HOME/.yadr/zsh/iterm2_shell_integration.zsh"
@@ -42,6 +47,8 @@
 
       # LM Studio CLI
       export PATH="$PATH:/Users/di/.lmstudio/bin"
+
+      export PATH="${config.home.profileDirectory}/bin:$PATH"
     '';
 
     # Stuff that used to be in .zshenv (runs *very* early)
@@ -55,7 +62,6 @@
 
   home.packages = with pkgs; [
     git
-    neovim
     ripgrep
     fd
   ];
@@ -66,6 +72,39 @@
       name = "Denys Yahofarov";
       email = "denyago@gmail.com";
     };
+  };
+
+  programs.neovim = {
+    enable = true;
+
+    # Have `vi`, `vim`, `vimdiff` all point to neovim
+    viAlias = true;
+    vimAlias = true;
+    vimdiffAlias = true;
+
+    # Make nvim the default editor ($EDITOR)
+    defaultEditor = true;
+
+    # Enable language bindings
+    withPython3 = true;
+    withNodeJs  = true;
+    withRuby    = true;
+
+    # Extra tools available *inside* Neovim (for grep, etc.)
+    extraPackages = with pkgs; [
+      ripgrep
+      fd
+      git
+    ];
+  };
+
+  
+  # >>> LazyVim here <<<
+  # This will put the LazyVim starter config into ~/.config/nvim
+  xdg.configFile."nvim" = {
+    source = lazyvim-config;
+    # If you ever get clashes, you can uncomment:
+    # force = true;
   };
 }
 
