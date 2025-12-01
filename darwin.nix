@@ -1,68 +1,43 @@
+{ config, pkgs, ... }:
+
 {
-  description = "Example nix-darwin system flake";
+  # Required
+  system.stateVersion = 6;
 
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nix-darwin.url = "github:nix-darwin/nix-darwin/master";
-    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-  };
+  nix.settings.experimental-features = "nix-command flakes";
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs }:
-  let
-    configuration = { pkgs, ... }: {
-      # List packages installed in system profile. To search by name, run:
-      # $ nix-env -qaP | grep wget
-      environment.systemPackages =
-        [ pkgs.vim # pkgs.alejandra pkgs.statix pkgs.deadnix
-        ];
+  # Touch ID for sudo
+  security.pam.services.sudo_local.touchIdAuth = true;
 
-      # Necessary for using flakes on this system.
-      nix.settings.experimental-features = "nix-command flakes";
+  # Your primary macOS user
+  system.primaryUser = "di";
 
-      # Enable alternative shell support in nix-darwin.
-      # programs.fish.enable = true;
-
-      # Set Git commit hash for darwin-version.
-      system.configurationRevision = self.rev or self.dirtyRev or null;
-
-      # Used for backwards compatibility, please read the changelog before changing.
-      # $ darwin-rebuild changelog
-      system.stateVersion = 6;
-
-      # The platform the configuration will be used on.
-      nixpkgs.hostPlatform = "aarch64-darwin";
-
-      # Use Touch ID for sudo authentication.
-      security.pam.services.sudo_local.touchIdAuth = true;
-
-      system.primaryUser = "di";
-
-      #### General UI / UX (NSGlobalDomain) #######################################
+  ############################################################
+  ## NSGlobalDomain
+  ############################################################
 
   system.defaults.NSGlobalDomain = {
-    NSTableViewDefaultSizeMode = 2;               # sidebar icon size: medium
-    AppleShowScrollBars = "Always";               # Always show scrollbars
-
+    NSTableViewDefaultSizeMode = 2;
+    AppleShowScrollBars = "Always";
     NSUseAnimatedFocusRing = false;
     NSWindowResizeTime = 0.001;
 
-    # Save / print panels expanded
+    # Save/print panels expanded
     NSNavPanelExpandedStateForSaveMode = true;
     NSNavPanelExpandedStateForSaveMode2 = true;
     PMPrintingExpandedStateForPrint = true;
     PMPrintingExpandedStateForPrint2 = true;
 
-    # Save to disk, not iCloud
     NSDocumentSaveNewDocumentsToCloud = false;
 
-    # Typing / “smart” features
+    # Typing
     NSAutomaticCapitalizationEnabled = false;
     NSAutomaticDashSubstitutionEnabled = false;
     NSAutomaticPeriodSubstitutionEnabled = false;
     NSAutomaticQuoteSubstitutionEnabled = false;
     NSAutomaticSpellingCorrectionEnabled = false;
 
-    # Keyboard navigation / zoom
+    # Keyboard navigation
     AppleKeyboardUIMode = 3;
 
     # Key repeat
@@ -71,34 +46,43 @@
     InitialKeyRepeat = 10;
 
     AppleMeasurementUnits = "Centimeters";
-    AppleMetricUnits = 1;     # ✔ 1 = metric, 0 = imperial
+    AppleMetricUnits = 1;
 
-    # Text / rendering
     NSTextShowsControlCharacters = true;
     AppleFontSmoothing = 1;
+
+    AppleShowAllExtensions = true;
   };
 
-  system.defaults.CustomUserPreferences = {
-    NSGlobalDomain = {
-      AppleEnableMenuBarTransparency = false;
-      # Language / locale
-      AppleLanguages = [ "en" "ua" "ru" ];
-      AppleLocale = "en_GB@currency=EUR";
-      # Keyboard navigation / zoom
-      HIDScrollZoomModifierMask = 262144;
-      closeViewScrollWheelToggle = true;
-      closeViewZoomFollowsFocus = true;
-    };
+  ############################################################
+  ## Global preferences extending NSGlobalDomain
+  ############################################################
+
+  system.defaults.CustomUserPreferences.NSGlobalDomain = {
+    AppleEnableMenuBarTransparency = false;
+
+    AppleLanguages = [ "en" "ua" "ru" ];
+    AppleLocale = "en_GB@currency=EUR";
+
+    HIDScrollZoomModifierMask = 262144;
+    closeViewScrollWheelToggle = true;
+    closeViewZoomFollowsFocus = true;
+
+    WebKitDeveloperExtras = true;
   };
 
-  #### Loginwindow / language menu ###########################################
+  ############################################################
+  ## Loginwindow
+  ############################################################
 
   system.defaults.CustomUserPreferences.loginwindow = {
-    AdminHostInfo = "HostName";    # show IP/hostname/etc on login screen
-    showInputMenu = true;          # show language menu at login
+    AdminHostInfo = "HostName";
+    showInputMenu = true;
   };
 
-  #### Screenshots ###########################################################
+  ############################################################
+  ## Screenshots
+  ############################################################
 
   system.defaults.screencapture = {
     location = "/tmp";
@@ -106,45 +90,48 @@
     disable-shadow = true;
   };
 
-  #### Finder ###############################################################
+  ############################################################
+  ## Finder
+  ############################################################
 
   system.defaults.finder = {
     AppleShowAllExtensions = true;
-    QuitMenuItem = true;                        # allow ⌘+Q
+    QuitMenuItem = true;
     NewWindowTarget = "Home";
+
     ShowExternalHardDrivesOnDesktop = true;
     ShowHardDrivesOnDesktop = false;
     ShowMountedServersOnDesktop = true;
     ShowRemovableMediaOnDesktop = true;
+
     ShowStatusBar = true;
     ShowPathbar = true;
+
     _FXShowPosixPathInTitle = true;
     _FXSortFoldersFirst = true;
-    FXDefaultSearchScope = "SCcf";              # search current folder
+    FXDefaultSearchScope = "SCcf";
     FXEnableExtensionChangeWarning = false;
-    FXPreferredViewStyle = "Nlsv";              # Default Finder folder view is the columns view
+
+    FXPreferredViewStyle = "Nlsv";
   };
 
   system.defaults.CustomUserPreferences.finder = {
     DisableAllAnimations = true;
+
     FXInfoPanesExpanded = {
       General = true;
       OpenWith = true;
       Privileges = true;
     };
+
     WarnOnEmptyTrash = false;
   };
 
-  # Global “show all extensions” still belongs to NSGlobalDomain:
-  system.defaults.NSGlobalDomain.AppleShowAllExtensions = true;
-
-  # DesktopServices (.DS_Store behaviour)
   system.defaults.CustomUserPreferences."com.apple.desktopservices" = {
     DSDontWriteNetworkStores = true;
     DSDontWriteUSBStores = true;
   };
 
-  # Disk image verification & auto-open behaviour
   system.defaults.CustomUserPreferences."com.apple.frameworks.diskimages" = {
     "skip-verify" = true;
     "skip-verify-locked" = true;
@@ -153,7 +140,9 @@
     "auto-open-rw-root" = true;
   };
 
-  #### Dock ##################################################################
+  ############################################################
+  ## Dock
+  ############################################################
 
   system.defaults.dock = {
     "mouse-over-hilite-stack" = true;
@@ -162,19 +151,15 @@
     "minimize-to-application" = true;
     "enable-spring-load-actions-on-all-items" = true;
     "show-process-indicators" = true;
-
-    # Clear default icons & show only open apps
-    "persistent-apps" = [ ];
+    "persistent-apps" = [];
     "static-only" = true;
-
     launchanim = false;
     "expose-animation-duration" = 0.1;
     "expose-group-apps" = false;
-
     "dashboard-in-overlay" = true;
-    "mru-spaces" = false; # Don’t rearrange spaces based on the most recent use
+    "mru-spaces" = false;
 
-    autohide = true; # Don't autohide the dock.
+    autohide = true;
     "autohide-delay" = 0.0;
     "autohide-time-modifier" = 0.0;
 
@@ -182,30 +167,27 @@
     "show-recents" = true;
   };
 
-#### Dashboard ###############################################################
-system.defaults.CustomUserPreferences = {
-
-  "com.apple.dashboard" = {
+  system.defaults.CustomUserPreferences."com.apple.dashboard" = {
     mcx-disabled = true;
   };
-};
 
-  #### Activity Monitor ######################################################
+  ############################################################
+  ## Activity Monitor
+  ############################################################
 
   system.defaults.ActivityMonitor = {
-  IconType = 5;            # CPU in Dock
-  OpenMainWindow = true;
+    IconType = 5;
+    OpenMainWindow = true;
+    ShowCategory = 100;
+    SortColumn = "CPUUsage";
+    SortDirection = 0;
+  };
 
-  # IMPORTANT: ShowCategory must be one of 100–107, not 0:
-  # 100 = All Processes, 102 = My Processes, etc.
-  ShowCategory = 100;      # 100 = All Processes
+  ############################################################
+  ## Safari
+  ############################################################
 
-  SortColumn = "CPUUsage";
-  SortDirection = 0;       # 0 = descending
-};
-
-  #### Safari & WebKit #######################################################
-
+  # ⚠ Safari prefs may fail without Full Disk Access
   system.defaults.CustomUserPreferences."com.apple.Safari" = {
     UniversalSearchEnabled = false;
     SuppressSearchSuggestions = true;
@@ -242,16 +224,13 @@ system.defaults.CustomUserPreferences = {
     InstallExtensionUpdatesAutomatically = true;
   };
 
-  # Global WebKit developer extras
-  system.defaults.CustomUserPreferences.NSGlobalDomain.WebKitDeveloperExtras = true;
-
-  #### Time Machine ##########################################################
+  ############################################################
+  ## Time Machine / Software Update
+  ############################################################
 
   system.defaults.CustomUserPreferences."com.apple.TimeMachine" = {
     DoNotOfferNewDisksForBackup = true;
   };
-
-  #### Software Update / App Store ###########################################
 
   system.defaults.CustomUserPreferences."com.apple.SoftwareUpdate" = {
     AutomaticCheckEnabled = true;
@@ -271,13 +250,13 @@ system.defaults.CustomUserPreferences = {
     ShowDebugMenu = true;
   };
 
-  #### Photos ################################################################
-
-system.defaults.CustomUserPreferences."com.apple.ImageCapture" = {
+  system.defaults.CustomUserPreferences."com.apple.ImageCapture" = {
     disableHotPlug = true;
-};
+  };
 
-  #### Terminal ##############################################################
+  ############################################################
+  ## Terminal
+  ############################################################
 
   system.defaults.CustomUserPreferences."com.apple.terminal" = {
     StringEncodings = [ 4 ];
@@ -285,49 +264,45 @@ system.defaults.CustomUserPreferences."com.apple.ImageCapture" = {
     ShowLineMarks = 0;
   };
 
-  #### QuickTime #############################################################
+  ############################################################
+  ## QuickTime
+  ############################################################
 
   system.defaults.CustomUserPreferences."com.apple.QuickTimePlayerX" = {
     MGPlayMovieOnOpen = true;
   };
 
+  ############################################################
+  ## Screensaver
+  ############################################################
 
-      system.defaults.screensaver = { 
-        askForPasswordDelay = 10;
-      };
+  system.defaults.screensaver.askForPasswordDelay = 10;
 
-  #######################################################
-  # Power management & TM: small activation script     #
-  #######################################################
+  ############################################################
+  ## Power Management Activation Script
+  ############################################################
 
-  system.activationScripts.postActivation.text = ''
-  # General power settings
-  pmset -a lidwake 1
-  pmset -a autorestart 1
-  pmset -a standbydelay 86400
+  system.activationScripts.powerAndTm.text = ''
+    pmset -a lidwake 1
+    pmset -a autorestart 1
+    pmset -a standbydelay 86400
 
-  # Display sleep and system sleep (consistent values)
-  # AC power:
-  pmset -c displaysleep 0
-  pmset -c sleep 0
+    # AC
+    pmset -c displaysleep 0
+    pmset -c sleep 0
 
-  # Battery:
-  pmset -b displaysleep 2
-  pmset -b sleep 10
+    # Battery
+    pmset -b displaysleep 2
+    pmset -b sleep 10
 
-  # Disable Time Machine local snapshots
-  if command -v tmutil >/dev/null 2>&1; then
-    tmutil disable || true
-  fi
+    # Disable Time Machine local snapshots
+    if command -v tmutil >/dev/null 2>&1; then
+      tmutil disable || true
+    fi
   '';
 
-    };
-  in
-  {
-    # Build darwin flake using:
-    # $ darwin-rebuild build --flake .#simple
-    darwinConfigurations."Denyss-MacBook-Pro" = nix-darwin.lib.darwinSystem {
-      modules = [ configuration ];
-    };
-  };
+  system.activationScripts.nvramBootChime.text = ''
+    # Disable boot chime; ignore errors on locked-down systems
+    /usr/sbin/nvram SystemAudioVolume=" " || true
+  '';
 }
