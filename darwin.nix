@@ -9,6 +9,13 @@
   # Touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
 
+  users.users.di = {
+    # If the user already exists in macOS, nix-darwin won't recreate it,
+    # but this lets Home Manager know the correct home directory.
+    home = "/Users/di";
+    shell = pkgs.zsh;  # optional, but nice
+  };
+
   # Your primary macOS user
   system.primaryUser = "di";
 

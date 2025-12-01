@@ -30,6 +30,9 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
 
+          # Back up existing dotfiles instead of refusing to overwrite
+          home-manager.backupFileExtension = "bak";
+
           home-manager.users.di = import ./home.nix;
         }
       ];
