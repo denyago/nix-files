@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 let
   # LazyVim starter config straight from GitHub
@@ -6,6 +6,34 @@ let
     url = "https://github.com/LazyVim/starter.git";
     rev = "803bc181d7c0d6d5eeba9274d9be49b287294d99";
   };
+  isHomeProfile = config.home.username == "di";
+  baseCliTools = with pkgs; [
+    ripgrep
+    fd
+    jq
+    yq # python yq → provides `yq` and `xq` binaries
+    tree
+    unixtools.watch
+
+    rclone
+    rsync
+    wget
+
+    git
+    gh # GitHub CLI tool
+    lazygit # Simple terminal UI for git commands
+
+    bat # Cat(1) clone with syntax highlighting and Git integration
+    exiftool # Tool to read, write and edit EXIF meta information
+    gnupg # Modern release of the GNU Privacy Guard, a GPL OpenPGP implementation
+
+    lazydocker # Simple terminal UI for both docker and docker-compose
+    dive # Tool for exploring each layer in a docker image
+  ];
+  homeOnlyCliTools = with pkgs; [
+    # e.g. spotify-tui
+    # e.g. magic-wormhole
+  ];
 in
 {
   home.stateVersion = "24.11";
@@ -60,11 +88,9 @@ in
     '';
   };
 
-  home.packages = with pkgs; [
-    git
-    ripgrep
-    fd
-  ];
+  home.packages =
+    baseCliTools
+    ++ lib.optionals isHomeProfile homeOnlyCliTools;
 
   programs.git = {
     enable = true;
@@ -92,9 +118,9 @@ in
 
     # Extra tools available *inside* Neovim (for grep, etc.)
     extraPackages = with pkgs; [
-      ripgrep
-      fd
-      git
+     git
+     ripgrep
+     fd
     ];
   };
 
