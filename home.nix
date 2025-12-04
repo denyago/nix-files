@@ -14,6 +14,10 @@ let
     yq # python yq → provides `yq` and `xq` binaries
     tree
     unixtools.watch
+    htop
+    tmux
+    tree
+    unar
 
     rclone
     rsync
@@ -22,17 +26,54 @@ let
     git
     gh # GitHub CLI tool
     lazygit # Simple terminal UI for git commands
+    graphviz
 
     bat # Cat(1) clone with syntax highlighting and Git integration
     exiftool # Tool to read, write and edit EXIF meta information
     gnupg # Modern release of the GNU Privacy Guard, a GPL OpenPGP implementation
+    pinentry-curses # Passphrase entry dialog utilizing the Assuan protocol
+    pinentry_mac
 
     lazydocker # Simple terminal UI for both docker and docker-compose
     dive # Tool for exploring each layer in a docker image
+    k9s
+
+    awscli
+
+    python313
+    pipx
   ];
   homeOnlyCliTools = with pkgs; [
-    # e.g. spotify-tui
-    # e.g. magic-wormhole
+    # Core utilities
+    mc
+    imagemagick
+    mtr
+    overmind
+    smartmontools
+
+    # Languages
+    go
+    jdk25_headless
+    kotlin
+    nodejs_24
+    rustup
+
+    # Language tools
+    gradle
+    jmeter
+    pnpm
+    shellcheck
+    yarn
+
+    # Security / encryption / OSINT
+    gocryptfs
+    nmap
+    gallery-dl
+    yt-dlp
+    zbar
+
+    # Mechanical keyboards
+    qmk
   ];
 in
 {
