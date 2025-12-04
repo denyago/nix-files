@@ -1,4 +1,4 @@
-{ config, pkgs, lib, userProfile, ... }:
+{ config, pkgs, lib, userProfile, workInternal, ... }:
 
 let
   # LazyVim starter config straight from GitHub
@@ -131,7 +131,8 @@ in
 
   home.packages =
     baseCliTools
-    ++ lib.optionals userProfile.isHomeProfile homeOnlyCliTools;
+    ++ lib.optionals userProfile.isHomeProfile homeOnlyCliTools
+    ++ workInternal.packages;
 
   programs.git = {
     enable = true;

@@ -1,4 +1,4 @@
-{ config, pkgs, lib, userProfile, ... }:
+{ config, pkgs, lib, userProfile, workInternal, ... }:
 
 let
   workCasks = [
@@ -72,8 +72,6 @@ let
     "telegram"
     "whatsapp"
   ];
-
-  workInternal = import ./work-internal.nix;
 in
 {
   # Required
@@ -101,7 +99,7 @@ in
     casks =
       workCasks
       ++ lib.optionals userProfile.isHomeProfile homeOnlyCasks
-      ++ (workInternal.casks or [ ]);
+      ++ workInternal.casks;
   };
 
   fonts = {

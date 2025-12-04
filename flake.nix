@@ -16,11 +16,13 @@
   let
     system = "aarch64-darwin";
     userProfile = import ./user-profile.nix;
+    pkgs = nixpkgs.legacyPackages.${system};
+    workInternal = (import ./work-internal.nix) { inherit pkgs; };
   in
   {
     darwinConfigurations."Denyss-MacBook-Pro" = nix-darwin.lib.darwinSystem {
       inherit system;
-      specialArgs = { inherit userProfile; };
+      specialArgs = { inherit userProfile workInternal; };
 
       modules = [
         ./darwin.nix
@@ -35,7 +37,7 @@
           # Back up existing dotfiles instead of refusing to overwrite
           home-manager.backupFileExtension = "bak";
 
-          home-manager.extraSpecialArgs = { inherit userProfile; };
+          home-manager.extraSpecialArgs = { inherit userProfile workInternal; };
 
           home-manager.users.${userProfile.username} = import ./home.nix;
         }

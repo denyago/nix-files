@@ -1,4 +1,9 @@
+{ pkgs, ... }:
+
 {
     casks = [
+    ];
+
+    packages = [
     ];
 }
