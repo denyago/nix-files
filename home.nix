@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, userProfile, ... }:
 
 let
   # LazyVim starter config straight from GitHub
@@ -6,7 +6,6 @@ let
     url = "https://github.com/LazyVim/starter.git";
     rev = "803bc181d7c0d6d5eeba9274d9be49b287294d99";
   };
-  isHomeProfile = config.home.username == "di";
   baseCliTools = with pkgs; [
     ripgrep
     fd
@@ -110,37 +109,35 @@ in
         source "$HOME/.yadr/zsh/iterm2_shell_integration.zsh"
       fi
 
-      # SDKMAN
-      export SDKMAN_DIR="$HOME/.sdkman"
-      [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+      ${lib.optionalString userProfile.isHomeProfile ''
+        # GPG TTY fix
+        export GPG_TTY=$(tty)
 
-      # GPG TTY fix
-      export GPG_TTY=$(tty)
-
-      # LM Studio CLI
-      export PATH="$PATH:/Users/di/.lmstudio/bin"
+        # LM Studio CLI
+        export PATH="$PATH:$HOME/.lmstudio/bin"
+      ''}
 
       export PATH="${config.home.profileDirectory}/bin:$PATH"
     '';
 
     # Stuff that used to be in .zshenv (runs *very* early)
-    envExtra = ''
+    envExtra = lib.optionalString userProfile.isHomeProfile ''
       # Cargo environment
       if [ -f "$HOME/.cargo/env" ]; then
-        . "$HOME/.cargo/env"
+      . "$HOME/.cargo/env"
       fi
     '';
   };
 
   home.packages =
     baseCliTools
-    ++ lib.optionals isHomeProfile homeOnlyCliTools;
+    ++ lib.optionals userProfile.isHomeProfile homeOnlyCliTools;
 
   programs.git = {
     enable = true;
     settings.user = {
       name = "Denys Yahofarov";
-      email = "denyago@gmail.com";
+      email = userProfile.email;
     };
   };
 

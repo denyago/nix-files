@@ -12,13 +12,15 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nixpkgs, nix-darwin, home-manager, ... }:
+  outputs = { self, nixpkgs, nix-darwin, home-manager, ... }:
   let
     system = "aarch64-darwin";
+    userProfile = import ./user-profile.nix;
   in
   {
     darwinConfigurations."Denyss-MacBook-Pro" = nix-darwin.lib.darwinSystem {
       inherit system;
+      specialArgs = { inherit userProfile; };
 
       modules = [
         ./darwin.nix
@@ -33,7 +35,9 @@
           # Back up existing dotfiles instead of refusing to overwrite
           home-manager.backupFileExtension = "bak";
 
-          home-manager.users.di = import ./home.nix;
+          home-manager.extraSpecialArgs = { inherit userProfile; };
+
+          home-manager.users.${userProfile.username} = import ./home.nix;
         }
       ];
     };

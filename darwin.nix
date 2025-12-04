@@ -1,10 +1,6 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, userProfile, ... }:
 
 let
-  # Home profile: the HM user named "di"
-  isHomeProfile =
-    (config.home-manager.users.di.home.username or "") == "di";
-
   workCasks = [
     # Core utilities
     "alt-tab"
@@ -76,6 +72,8 @@ let
     "telegram"
     "whatsapp"
   ];
+
+  workInternal = import ./work-internal.nix;
 in
 {
   # Required
@@ -86,15 +84,15 @@ in
   # Touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
 
-  users.users.di = {
+  users.users.${userProfile.username} = {
     # If the user already exists in macOS, nix-darwin won't recreate it,
     # but this lets Home Manager know the correct home directory.
-    home = "/Users/di";
+    home = "/Users/${userProfile.username}";
     shell = pkgs.zsh;  # optional, but nice
   };
 
   # Your primary macOS user
-  system.primaryUser = "di";
+  system.primaryUser = userProfile.username;
 
   homebrew = {
     enable = true;
@@ -102,7 +100,8 @@ in
 
     casks =
       workCasks
-      ++ lib.optionals isHomeProfile homeOnlyCasks;
+      ++ lib.optionals userProfile.isHomeProfile homeOnlyCasks
+      ++ (workInternal.casks or [ ]);
   };
 
   fonts = {
@@ -291,47 +290,6 @@ in
     ShowCategory = 100;
     SortColumn = "CPUUsage";
     SortDirection = 0;
-  };
-
-  ############################################################
-  ## Safari
-  ############################################################
-
-  # ⚠ Safari prefs may fail without Full Disk Access
-  system.defaults.CustomUserPreferences."com.apple.Safari" = {
-    UniversalSearchEnabled = false;
-    SuppressSearchSuggestions = true;
-    WebKitTabToLinksPreferenceKey = true;
-    "com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks" = true;
-    ShowFullURLInSmartSearchField = true;
-    HomePage = "about:blank";
-    AutoOpenSafeDownloads = false;
-    "com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled" = true;
-    ShowFavoritesBar = false;
-    ShowSidebarInTopSites = false;
-    DebugSnapshotsUpdatePolicy = 2;
-    IncludeInternalDebugMenu = true;
-    FindOnPageMatchesWordStartsOnly = false;
-    ProxiesInBookmarksBar = "()";
-    IncludeDevelopMenu = true;
-    WebKitDeveloperExtrasEnabledPreferenceKey = true;
-    "com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled" = true;
-    WebContinuousSpellCheckingEnabled = true;
-    WebAutomaticSpellingCorrectionEnabled = false;
-    AutoFillFromAddressBook = false;
-    AutoFillPasswords = false;
-    AutoFillCreditCardData = false;
-    AutoFillMiscellaneousForms = false;
-    WarnAboutFraudulentWebsites = true;
-    WebKitPluginsEnabled = false;
-    "com.apple.Safari.ContentPageGroupIdentifier.WebKit2PluginsEnabled" = false;
-    WebKitJavaEnabled = false;
-    "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabled" = false;
-    "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabledForLocalFiles" = false;
-    WebKitJavaScriptCanOpenWindowsAutomatically = false;
-    "com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically" = false;
-    SendDoNotTrackHTTPHeader = true;
-    InstallExtensionUpdatesAutomatically = true;
   };
 
   ############################################################
