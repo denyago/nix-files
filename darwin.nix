@@ -26,7 +26,6 @@ let
     "docker-desktop"
     "insomnia"
     "obsidian"
-    "neovide-app"
 
     # QuickLook helpers
     "quicklook-csv"

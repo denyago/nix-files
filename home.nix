@@ -42,6 +42,9 @@ let
 
     python313
     pipx
+
+    neovide
+    lua
   ];
   homeOnlyCliTools = with pkgs; [
     # Core utilities
