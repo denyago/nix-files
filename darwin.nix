@@ -72,6 +72,11 @@ let
     "telegram"
     "whatsapp"
   ];
+
+  workBrews = [
+    "python@3.12"
+    "pipx"
+  ];
 in
 {
   # Required
@@ -95,6 +100,10 @@ in
   homebrew = {
     enable = true;
     onActivation.cleanup = "zap";
+
+    taps = workInternal.taps;
+
+    brews = workBrews ++ workInternal.brews;
 
     casks =
       workCasks

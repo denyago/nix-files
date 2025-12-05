@@ -38,9 +38,7 @@ let
     k9s
 
     awscli
-
-    python313
-    pipx
+    go-task
 
     neovide
     lua

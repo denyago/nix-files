@@ -4,6 +4,12 @@
     casks = [
     ];
 
+    taps = [
+    ];
+
+    brews = [
+    ];
+
     packages = [
     ];
 }
