@@ -46,13 +46,20 @@ let
     awscli
     go-task
 
+    # LazyVim utilities
+    fzf
+    ast-grep
     neovide
     lua
+    imagemagick
+    ghostscript
+    shfmt
+    stylua
+    nodePackages.prettier
   ];
   homeOnlyCliTools = with pkgs; [
     # Core utilities
     mc
-    imagemagick
     mtr
     overmind
     smartmontools
@@ -172,7 +179,7 @@ in
   # >>> LazyVim here <<<
   # This will put the LazyVim starter config into ~/.config/nvim
   xdg.configFile."nvim" = {
-    source = lazyvim-config;
+    source = ./nvim;
     # If you ever get clashes, you can uncomment:
     # force = true;
   };
