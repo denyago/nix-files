@@ -56,6 +56,7 @@ let
     shfmt
     stylua
     nodePackages.prettier
+    tree-sitter
   ];
   homeOnlyCliTools = with pkgs; [
     # Core utilities
