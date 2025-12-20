@@ -2,6 +2,10 @@
   description = "nix-darwin + Home Manager system for denyago";
 
   inputs = {
+    self = {
+      submodules = true;
+    };
+
     # You used unstable, keeping it:
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 

@@ -3,6 +3,7 @@ Quick start:
 - `nix run "nixpkgs#hello"`
 - `git clone ... `
 - `cd nix-files`
+- `git submodule update --init --recursive`
 - edit the username and email in the `user-profile.nix`
 - `sudo nix run nix-darwin -- switch --flake .`
 - restart some MacOS processes:
@@ -24,3 +25,5 @@ killall cfprefsd
 ... or reboot.
 
 And on every change: `sudo nix run darwin-rebuild switch --flake .`
+
+Update `./update.sh`
