@@ -20,7 +20,6 @@ let
     "iterm2"
     "visual-studio-code"
     "docker-desktop"
-    "insomnia"
     "obsidian"
 
     # QuickLook helpers
@@ -194,6 +193,15 @@ in
   system.defaults.CustomUserPreferences.loginwindow = {
     AdminHostInfo = "HostName";
     showInputMenu = true;
+    SHOWFULLNAME = true;
+  };
+
+  ############################################################
+  ## Loginwindow
+  ############################################################
+
+  system.defaults.CustomUserPreferences."com.apple.screensaver" = {
+    idleTime = 1800;
   };
 
   ############################################################
@@ -362,13 +370,8 @@ in
     pmset -a autorestart 1
     pmset -a standbydelay 86400
 
-    # AC
-    pmset -c displaysleep 0
-    pmset -c sleep 0
-
-    # Battery
-    pmset -b displaysleep 2
-    pmset -b sleep 10
+    /usr/bin/pmset -b displaysleep 30 sleep 30
+    /usr/bin/pmset -c displaysleep 30 sleep 30
 
     # Disable Time Machine local snapshots
     if command -v tmutil >/dev/null 2>&1; then
