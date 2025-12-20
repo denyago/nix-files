@@ -57,6 +57,7 @@ let
     stylua
     nodePackages.prettier
     tree-sitter
+    lua-language-server
   ];
   homeOnlyCliTools = with pkgs; [
     # Core utilities
