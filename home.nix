@@ -18,14 +18,20 @@ let
     tree
     unar
 
+    # Network Tools
     rclone
     rsync
     wget
+    httpyac
 
     git
     gh # GitHub CLI tool
     lazygit # Simple terminal UI for git commands
     graphviz
+
+    # Languages
+    nodejs_24
+    yarn
 
     bat # Cat(1) clone with syntax highlighting and Git integration
     exiftool # Tool to read, write and edit EXIF meta information
@@ -55,7 +61,6 @@ let
     go
     jdk25_headless
     kotlin
-    nodejs_24
     rustup
 
     # Language tools
@@ -63,7 +68,6 @@ let
     jmeter
     pnpm
     shellcheck
-    yarn
 
     # Security / encryption / OSINT
     gocryptfs
@@ -96,7 +100,7 @@ in
       export FPATH="$(brew --prefix)/share/zsh/site-functions:$FPATH"
 
       # PATH setup
-      export PATH="/usr/local/bin:$HOME/.rvm/bin:$PATH:$HOME/.local/bin"
+      export PATH="/usr/local/bin:$HOME/.rvm/bin:$PATH:$HOME/.local/bin:$HOME/.yarn/bin"
       eval "$(/opt/homebrew/bin/brew shellenv)"
 
       # Locale
