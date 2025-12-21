@@ -33,13 +33,33 @@ upgrade)
   fi
   ;;
 
+cleanup)
+  echo "🧹 Cleaning up Nix (keeping last 5 generations)..."
+
+  echo "→ Deleting old generations (keep 5)"
+  nix-env --delete-generations +5
+
+  echo "→ Garbage collecting unreferenced store paths"
+  nix-store --gc
+
+  echo "→ Optimizing store (hardlink duplicates)"
+  nix-store --optimise
+
+  echo "✅ Cleanup complete"
+  ;;
+
 dev)
   sub="${1:-}"
   shift || true
   case "${sub}" in
   patch)
     # Run this from the upstream-pointing folder. It applies the diff from ~/nix-files.
-    exec bash -lc 'git -C ~/nix-files diff | git apply -'
+    exec bash -lc '
+      set -e
+      git -C ~/nix-files diff | git apply -
+      git add -A
+      git commit
+    '
     ;;
   push)
     exec git push origin master

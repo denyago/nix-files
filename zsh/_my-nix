@@ -5,6 +5,7 @@ _my_nix() {
   commands=(
     'apply:Apply nix-darwin configuration'
     'upgrade:Upgrade nix and Homebrew packages'
+    'cleanup:Cleaning up nix'
     'dev:Developer helpers'
   )
 
