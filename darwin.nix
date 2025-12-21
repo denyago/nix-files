@@ -127,6 +127,10 @@ in
         builtins.attrValues nerdFontsOnly;
   };
 
+  home.file."Library/Application Support/iTerm2/DynamicProfiles/denyago.json" = {
+    source = ./macos/iterm2/DynamicProfiles/denyago.json;
+  };
+
   ############################################################
   ## NSGlobalDomain
   ############################################################
