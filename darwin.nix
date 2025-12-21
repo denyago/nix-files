@@ -127,8 +127,15 @@ in
         builtins.attrValues nerdFontsOnly;
   };
 
-  home.file."Library/Application Support/iTerm2/DynamicProfiles/denyago.json" = {
-    source = ./macos/iterm2/DynamicProfiles/denyago.json;
+  # Put profiles into /etc so nix-darwin can manage them
+  environment.etc."iterm2/DynamicProfiles/denyago.json".source =
+    ./macos/iterm2/DynamicProfiles/denyago.json;
+
+  # Tell iTerm2 to load preferences from /etc/iterm2
+
+  system.defaults.CustomUserPreferences."com.googlecode.iterm2" = {
+    # Tell iTerm2 where to look for dynamic profiles
+    DynamicProfilesPath = "/etc/iterm2/DynamicProfiles";
   };
 
   ############################################################

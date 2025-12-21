@@ -1,4 +1,9 @@
-Quick start:
+# Denys' Nix files
+
+Supposed to be shared across multiple computers.
+So far, MacOS only. And this is the upstream for my personal laptop and work laptop that has some overrides.
+
+## Quick start
 - `curl -fsSL https://install.determinate.systems/nix | sh -s -- install --prefer-upstream-nix`
 - `nix run "nixpkgs#hello"`
 - `git clone ... `
@@ -24,6 +29,10 @@ killall cfprefsd
 
 ... or reboot.
 
-And on every change: `sudo nix run darwin-rebuild switch --flake .`
+Afterwards:
+- go to iTerm2 settings and select one of the Nix -controlled profiles as default
 
-Update `./update.sh`
+## Continue
+
+- On every change: `sudo nix run darwin-rebuild switch --flake .`
+- Update packages (Nix and Brew) `./update.sh`
