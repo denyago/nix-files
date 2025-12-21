@@ -32,7 +32,48 @@ killall cfprefsd
 Afterwards:
 - go to iTerm2 settings and select one of the Nix -controlled profiles as default
 
-## Continue
+## Daily usage (`my-nix`)
 
-- On every change: `sudo nix run darwin-rebuild switch --flake .`
-- Update packages (Nix and Brew) `./update.sh`
+`my-nix` is the single entry point for working with this repo.
+
+### Apply configuration
+
+```bash
+my-nix apply
+```
+
+---
+
+### Upgrade packages (Nix + Homebrew)
+
+```bash
+my-nix upgrade
+```
+
+---
+
+### Development helpers
+
+#### Create a patch from this repo and apply it elsewhere
+
+```bash
+my-nix dev patch
+```
+
+Useful for porting **personal-only changes** into another checkout.
+
+---
+
+#### Push current branch
+
+```bash
+my-nix dev push
+```
+
+---
+
+#### Merge upstream non-interactively
+
+```bash
+my-nix dev merge-upstream
+```
