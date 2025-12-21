@@ -178,12 +178,9 @@ in
   };
 
   
-  # >>> LazyVim here <<<
-  # This will put the LazyVim starter config into ~/.config/nvim
-  xdg.configFile."nvim" = {
-    source = ./nvim;
-    # If you ever get clashes, you can uncomment:
-    # force = true;
-  };
+  # >>> LazyVim <<<
+  xdg.configFile."nvim".source =
+    config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/nix-files/nvim";
 }
 
