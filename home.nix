@@ -32,6 +32,7 @@ let
     # Languages
     nodejs_24
     yarn
+    ruby_3_4
 
     bat # Cat(1) clone with syntax highlighting and Git integration
     exiftool # Tool to read, write and edit EXIF meta information
