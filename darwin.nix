@@ -1,4 +1,11 @@
-{ config, pkgs, lib, userProfile, workInternal, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  userProfile,
+  workInternal,
+  ...
+}:
 
 let
   workCasks = [
@@ -90,7 +97,7 @@ in
     # If the user already exists in macOS, nix-darwin won't recreate it,
     # but this lets Home Manager know the correct home directory.
     home = "/Users/${userProfile.username}";
-    shell = pkgs.zsh;  # optional, but nice
+    shell = pkgs.zsh; # optional, but nice
   };
 
   # Your primary macOS user
@@ -104,27 +111,22 @@ in
 
     brews = workBrews ++ workInternal.brews;
 
-    casks =
-      workCasks
-      ++ lib.optionals userProfile.isHomeProfile homeOnlyCasks
-      ++ workInternal.casks;
+    casks = workCasks ++ lib.optionals userProfile.isHomeProfile homeOnlyCasks ++ workInternal.casks;
   };
 
   fonts = {
     packages =
       let
-        nerdFontsAll =
-          pkgs.nerd-fonts;
+        nerdFontsAll = pkgs.nerd-fonts;
 
         # Remove helper attrs that are not fonts
-        nerdFontsOnly =
-          builtins.removeAttrs nerdFontsAll [
-            "override"
-            "overrideDerivation"
-            "recurseForDerivations"
-          ];
+        nerdFontsOnly = builtins.removeAttrs nerdFontsAll [
+          "override"
+          "overrideDerivation"
+          "recurseForDerivations"
+        ];
       in
-        builtins.attrValues nerdFontsOnly;
+      builtins.attrValues nerdFontsOnly;
   };
 
   # Put profiles into /etc so nix-darwin can manage them
@@ -187,7 +189,11 @@ in
   system.defaults.CustomUserPreferences.NSGlobalDomain = {
     AppleEnableMenuBarTransparency = false;
 
-    AppleLanguages = [ "en" "ua" "ru" ];
+    AppleLanguages = [
+      "en"
+      "ua"
+      "ru"
+    ];
     AppleLocale = "en_GB@currency=EUR";
 
     HIDScrollZoomModifierMask = 262144;
@@ -286,7 +292,7 @@ in
     "minimize-to-application" = true;
     "enable-spring-load-actions-on-all-items" = true;
     "show-process-indicators" = true;
-    "persistent-apps" = [];
+    "persistent-apps" = [ ];
     "static-only" = true;
     launchanim = false;
     "expose-animation-duration" = 0.1;

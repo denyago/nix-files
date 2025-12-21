@@ -1,4 +1,11 @@
-{ config, pkgs, lib, userProfile, workInternal, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  userProfile,
+  workInternal,
+  ...
+}:
 
 let
   # LazyVim starter config straight from GitHub
@@ -50,15 +57,22 @@ let
     # LazyVim utilities
     fzf
     ast-grep
-    neovide
-    lua
+    tree-sitter
     imagemagick
     ghostscript
-    shfmt
-    stylua
+    ## JS/TS/JSON/...
     nodePackages.prettier
-    tree-sitter
+    ## Shell
+    shfmt
+    ## Lua
+    lua
+    stylua
     lua-language-server
+    ## Nix LSP + formatter
+    nil
+    nixfmt-rfc-style
+    ## NeoVIM GUI App
+    neovide
   ];
   homeOnlyCliTools = with pkgs; [
     # Core utilities
@@ -101,7 +115,18 @@ in
     oh-my-zsh = {
       enable = true;
       theme = "robbyrussell";
-      plugins = [ "cp" "git" "gh" "nvm" "rvm" "ruby" "python" "docker" "docker-compose" "aws" ];
+      plugins = [
+        "cp"
+        "git"
+        "gh"
+        "nvm"
+        "rvm"
+        "ruby"
+        "python"
+        "docker"
+        "docker-compose"
+        "aws"
+      ];
     };
 
     # Stuff that used to live in .zshrc (interactive shells)
@@ -142,9 +167,7 @@ in
   };
 
   home.packages =
-    baseCliTools
-    ++ lib.optionals userProfile.isHomeProfile homeOnlyCliTools
-    ++ workInternal.packages;
+    baseCliTools ++ lib.optionals userProfile.isHomeProfile homeOnlyCliTools ++ workInternal.packages;
 
   programs.git = {
     enable = true;
@@ -167,21 +190,18 @@ in
 
     # Enable language bindings
     withPython3 = true;
-    withNodeJs  = true;
-    withRuby    = true;
+    withNodeJs = true;
+    withRuby = true;
 
     # Extra tools available *inside* Neovim (for grep, etc.)
     extraPackages = with pkgs; [
-     git
-     ripgrep
-     fd
+      git
+      ripgrep
+      fd
     ];
   };
 
-  
   # >>> LazyVim <<<
   xdg.configFile."nvim".source =
-    config.lib.file.mkOutOfStoreSymlink
-      "${config.home.homeDirectory}/nix-files/nvim";
+    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/nix-files/nvim";
 }
-

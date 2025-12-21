@@ -16,37 +16,43 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, nix-darwin, home-manager, ... }:
-  let
-    system = "aarch64-darwin";
-    userProfile = import ./user-profile.nix;
-    pkgs = nixpkgs.legacyPackages.${system};
-    workInternal = (import ./work-internal.nix) { inherit pkgs; };
-  in
-  {
-    darwinConfigurations."Denyss-MacBook-Pro" = nix-darwin.lib.darwinSystem {
-      inherit system;
-      specialArgs = { inherit userProfile workInternal; };
+  outputs =
+    {
+      self,
+      nixpkgs,
+      nix-darwin,
+      home-manager,
+      ...
+    }:
+    let
+      system = "aarch64-darwin";
+      userProfile = import ./user-profile.nix;
+      pkgs = nixpkgs.legacyPackages.${system};
+      workInternal = (import ./work-internal.nix) { inherit pkgs; };
+    in
+    {
+      darwinConfigurations."Denyss-MacBook-Pro" = nix-darwin.lib.darwinSystem {
+        inherit system;
+        specialArgs = { inherit userProfile workInternal; };
 
-      modules = [
-        ./darwin.nix
+        modules = [
+          ./darwin.nix
 
-        # Home-manager as a nix-darwin module
-        home-manager.darwinModules.home-manager
+          # Home-manager as a nix-darwin module
+          home-manager.darwinModules.home-manager
 
-        {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
 
-          # Back up existing dotfiles instead of refusing to overwrite
-          home-manager.backupFileExtension = "bak";
+            # Back up existing dotfiles instead of refusing to overwrite
+            home-manager.backupFileExtension = "bak";
 
-          home-manager.extraSpecialArgs = { inherit userProfile workInternal; };
+            home-manager.extraSpecialArgs = { inherit userProfile workInternal; };
 
-          home-manager.users.${userProfile.username} = import ./home.nix;
-        }
-      ];
+            home-manager.users.${userProfile.username} = import ./home.nix;
+          }
+        ];
+      };
     };
-  };
 }
-

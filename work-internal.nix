@@ -1,15 +1,15 @@
 { pkgs, ... }:
 
 {
-    casks = [
-    ];
+  casks = [
+  ];
 
-    taps = [
-    ];
+  taps = [
+  ];
 
-    brews = [
-    ];
+  brews = [
+  ];
 
-    packages = [
-    ];
+  packages = [
+  ];
 }
