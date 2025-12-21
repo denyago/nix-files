@@ -1,0 +1,36 @@
+#compdef my-nix
+
+_my_nix() {
+  local -a commands
+  commands=(
+    'apply:Apply nix-darwin configuration'
+    'upgrade:Upgrade nix and Homebrew packages'
+    'dev:Developer helpers'
+  )
+
+  local -a dev_commands
+  dev_commands=(
+    'patch:Apply local diff to upstream repo'
+    'push:Push current branch to origin'
+    'merge-upstream:Merge upstream/master non-interactively'
+  )
+
+  _arguments -C \
+    '1:command:->cmds' \
+    '2:subcommand:->subcmds' && return 0
+
+  case $state in
+    cmds)
+      _describe 'command' commands
+      ;;
+    subcmds)
+      case $words[2] in
+        dev)
+          _describe 'dev command' dev_commands
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_my_nix "$@"

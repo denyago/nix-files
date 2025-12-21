@@ -45,7 +45,12 @@ dev)
     exec git push origin master
     ;;
   merge-upstream)
-    exec bash -lc 'git fetch --all && git merge upstream/master && git submodule update --init --recursive'
+    exec bash -lc '
+      set -e
+      git fetch --all
+      git merge --no-edit upstream/master
+      git submodule update --init --recursive
+    '
     ;;
   "" | -h | --help | help)
     usage

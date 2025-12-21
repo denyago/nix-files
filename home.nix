@@ -109,6 +109,10 @@ in
 
   programs.home-manager.enable = true;
 
+  home.file.".zsh/completions/_my-nix" = {
+    source = ./zsh/_my-nix;
+  };
+
   programs.zsh = {
     enable = true;
 
@@ -130,32 +134,36 @@ in
     };
 
     # Stuff that used to live in .zshrc (interactive shells)
-    initContent = ''
-      # https://docs.brew.sh/Shell-Completion
-      export FPATH="$(brew --prefix)/share/zsh/site-functions:$FPATH"
+    initContent = lib.mkMerge [
+      (lib.mkOrder 550 ''
+        # Custom completions (my-nix) — must be before compinit
+        fpath=("$HOME/.zsh/completions" $fpath)
+      '')
 
-      # PATH setup
-      export PATH="/usr/local/bin:$HOME/.rvm/bin:$PATH:$HOME/.local/bin:$HOME/.yarn/bin"
-      eval "$(/opt/homebrew/bin/brew shellenv)"
+      (lib.mkOrder 900 ''
+        # https://docs.brew.sh/Shell-Completion
+        export FPATH="$(brew --prefix)/share/zsh/site-functions:$FPATH"
 
-      # Locale
-      export LANG=en_US.UTF-8
+        # PATH setup
+        export PATH="/usr/local/bin:$HOME/.rvm/bin:$PATH:$HOME/.local/bin:$HOME/.yarn/bin"
+        eval "$(/opt/homebrew/bin/brew shellenv)"
 
-      # iTerm2 integration (from YADR)
-      if [ -f "$HOME/.yadr/zsh/iterm2_shell_integration.zsh" ]; then
-        source "$HOME/.yadr/zsh/iterm2_shell_integration.zsh"
-      fi
+        # Locale
+        export LANG=en_US.UTF-8
 
-      ${lib.optionalString userProfile.isHomeProfile ''
-        # GPG TTY fix
-        export GPG_TTY=$(tty)
+        # iTerm2 integration (from YADR)
+        if [ -f "$HOME/.yadr/zsh/iterm2_shell_integration.zsh" ]; then
+          source "$HOME/.yadr/zsh/iterm2_shell_integration.zsh"
+        fi
 
-        # LM Studio CLI
-        export PATH="$PATH:$HOME/.lmstudio/bin"
-      ''}
+        ${lib.optionalString userProfile.isHomeProfile ''
+          export GPG_TTY=$(tty)
+          export PATH="$PATH:$HOME/.lmstudio/bin"
+        ''}
 
-      export PATH="${config.home.profileDirectory}/bin:$PATH"
-    '';
+        export PATH="${config.home.profileDirectory}/bin:$PATH"
+      '')
+    ];
 
     # Stuff that used to be in .zshenv (runs *very* early)
     envExtra = lib.optionalString userProfile.isHomeProfile ''
@@ -167,7 +175,19 @@ in
   };
 
   home.packages =
-    baseCliTools ++ lib.optionals userProfile.isHomeProfile homeOnlyCliTools ++ workInternal.packages;
+    baseCliTools
+    ++ lib.optionals userProfile.isHomeProfile homeOnlyCliTools
+    ++ workInternal.packages
+    ++ [
+      (pkgs.writeShellApplication {
+        name = "my-nix";
+        runtimeInputs = [
+          pkgs.git
+          pkgs.nix
+        ];
+        text = builtins.readFile ./my-nix;
+      })
+    ];
 
   programs.git = {
     enable = true;
