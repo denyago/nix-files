@@ -53,6 +53,25 @@ read_default() {
   printf -v "$varname" '%s' "${input:-$default}"
 }
 
+push_repo() {
+  local repo_dir="$1" use_base="$2"
+  if [[ "$use_base" -eq 1 && -n "$BASE_CONTRIBUTOR_SSH_KEY" ]]; then
+    GIT_SSH_COMMAND="ssh -i ${BASE_CONTRIBUTOR_SSH_KEY} -o IdentitiesOnly=yes" \
+      git -C "$repo_dir" push
+  else
+    git -C "$repo_dir" push
+  fi
+}
+
+commits_ahead() {
+  local repo_dir="$1"
+  local upstream
+  upstream="$(git -C "$repo_dir" rev-parse --abbrev-ref '@{upstream}' 2>/dev/null)" || return 1
+  local count
+  count="$(git -C "$repo_dir" rev-list --count "${upstream}..HEAD")"
+  [[ "$count" -gt 0 ]]
+}
+
 process_repo() {
   local label="$1" repo_dir="$2" default_msg="$3" use_base="$4"
 
@@ -64,53 +83,56 @@ process_repo() {
     return 0
   fi
 
-  if ! is_dirty "$repo_dir"; then
-    echo "  Clean — nothing to commit."
-    return 0
-  fi
-
-  git -C "$repo_dir" add -A
-
-  if git -C "$repo_dir" diff --cached --quiet; then
-    echo "  Nothing staged — skipping."
-    return 0
-  fi
-
-  echo ""
-  git --no-pager -C "$repo_dir" diff --cached --stat
-  echo ""
-
-  read -r -p "  Commit changes? [Y/n] " yn
-  case "${yn:-y}" in
-    [Nn]*)
-      git -C "$repo_dir" reset --quiet
-      echo "  Skipped."
-      return 0
-      ;;
-  esac
-
-  local msg
-  read_default "  Commit message" "$default_msg" msg
-
-  git_cmd "$repo_dir" "$use_base" commit -m "$msg"
-
-  # Offer to push
+  # Handle detached HEAD — offer to checkout main branch
   if is_detached "$repo_dir"; then
-    echo "  ⚠ Detached HEAD — skipping push."
-  elif ! has_remote "$repo_dir"; then
-    echo "  No remote configured — skipping push."
+    local default_branch
+    default_branch="$(git -C "$repo_dir" config init.defaultBranch 2>/dev/null || echo "master")"
+    if git -C "$repo_dir" rev-parse --verify "$default_branch" &>/dev/null; then
+      echo "  Detached HEAD. Checking out ${default_branch}..."
+      git -C "$repo_dir" checkout "$default_branch"
+    else
+      echo "  ⚠ Detached HEAD — no ${default_branch} branch found, skipping."
+      return 0
+    fi
+  fi
+
+  # Commit if dirty
+  if is_dirty "$repo_dir"; then
+    git -C "$repo_dir" add -A
+
+    if ! git -C "$repo_dir" diff --cached --quiet; then
+      echo ""
+      git --no-pager -C "$repo_dir" diff --cached --stat
+      echo ""
+
+      read -r -p "  Commit changes? [Y/n] " yn
+      case "${yn:-y}" in
+        [Nn]*)
+          git -C "$repo_dir" reset --quiet
+          echo "  Commit skipped."
+          ;;
+        *)
+          local msg
+          read_default "  Commit message" "$default_msg" msg
+          git_cmd "$repo_dir" "$use_base" commit -m "$msg"
+          ;;
+      esac
+    fi
   else
-    read -r -p "  Push? [Y/n] " push_yn
+    echo "  Clean — nothing to commit."
+  fi
+
+  # Push if there are unpushed commits
+  if ! has_remote "$repo_dir"; then
+    return 0
+  fi
+  if commits_ahead "$repo_dir"; then
+    local ahead
+    ahead="$(git -C "$repo_dir" rev-list --count '@{upstream}..HEAD')"
+    read -r -p "  ${ahead} unpushed commit(s). Push? [Y/n] " push_yn
     case "${push_yn:-y}" in
       [Nn]*) echo "  Push skipped." ;;
-      *)
-        if [[ "$use_base" -eq 1 && -n "$BASE_CONTRIBUTOR_SSH_KEY" ]]; then
-          GIT_SSH_COMMAND="ssh -i ${BASE_CONTRIBUTOR_SSH_KEY} -o IdentitiesOnly=yes" \
-            git -C "$repo_dir" push
-        else
-          git -C "$repo_dir" push
-        fi
-        ;;
+      *) push_repo "$repo_dir" "$use_base" ;;
     esac
   fi
 }
