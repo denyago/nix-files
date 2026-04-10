@@ -19,5 +19,15 @@
       type = lib.types.singleLineStr;
       description = "Machine hostname (used as darwinConfigurations key)";
     };
+    baseContributor.name = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      description = "Git author name for commits to base and nvim submodules";
+    };
+    baseContributor.email = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      description = "Git author email for commits to base and nvim submodules";
+    };
   };
 }

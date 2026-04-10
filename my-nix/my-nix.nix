@@ -20,6 +20,8 @@
           ];
           text = ''
             export MY_NIX_DIR="${config.nixDir}"
+            export MY_NIX_BASE_CONTRIBUTOR_NAME="${config.baseContributor.name}"
+            export MY_NIX_BASE_CONTRIBUTOR_EMAIL="${config.baseContributor.email}"
             ${builtins.readFile ./scripts/cli.sh}
           '';
         })

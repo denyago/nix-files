@@ -9,6 +9,7 @@ usage() {
   cat <<'EOF'
 Usage:
   my-nix apply
+  my-nix commit
   my-nix upgrade [args...]
   my-nix cleanup
 EOF
@@ -24,7 +25,26 @@ shift || true
 
 case "${cmd}" in
 apply)
-  exec sudo darwin-rebuild switch --flake "${NIX_DIR}"
+  sudo darwin-rebuild switch --flake "${NIX_DIR}"
+  SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  commit_script="${MY_NIX_DIR:+${MY_NIX_DIR}/base/my-nix/scripts/commit.sh}"
+  commit_script="${commit_script:-${SCRIPT_DIR}/commit.sh}"
+  if [[ -x "${commit_script}" ]]; then
+    # shellcheck disable=SC1090
+    source "${commit_script}"
+  fi
+  ;;
+
+commit)
+  SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  commit_script="${MY_NIX_DIR:+${MY_NIX_DIR}/base/my-nix/scripts/commit.sh}"
+  commit_script="${commit_script:-${SCRIPT_DIR}/commit.sh}"
+  if [[ -x "${commit_script}" ]]; then
+    # shellcheck disable=SC1090
+    source "${commit_script}"
+  else
+    die "No commit script found at: ${commit_script}"
+  fi
   ;;
 
 upgrade)

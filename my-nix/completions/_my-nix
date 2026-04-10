@@ -4,6 +4,7 @@ _my_nix() {
   local -a commands
   commands=(
     'apply:Apply nix-darwin configuration'
+    'commit:Commit and push changes across all repos'
     'upgrade:Upgrade nix and Homebrew packages'
     'cleanup:Clean up nix generations and store'
   )
