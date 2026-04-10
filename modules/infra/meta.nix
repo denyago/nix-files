@@ -29,5 +29,10 @@
       default = "";
       description = "Git author email for commits to base and nvim submodules";
     };
+    baseContributor.sshKey = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      description = "Path to SSH key for pushing to base and nvim repos";
+    };
   };
 }

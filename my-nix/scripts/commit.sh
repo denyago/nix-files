@@ -4,6 +4,7 @@ set -euo pipefail
 NIX_DIR="${MY_NIX_DIR:?MY_NIX_DIR must be set}"
 BASE_CONTRIBUTOR_NAME="${MY_NIX_BASE_CONTRIBUTOR_NAME:-}"
 BASE_CONTRIBUTOR_EMAIL="${MY_NIX_BASE_CONTRIBUTOR_EMAIL:-}"
+BASE_CONTRIBUTOR_SSH_KEY="${MY_NIX_BASE_CONTRIBUTOR_SSH_KEY:-}"
 
 # Repos to process, inside-out.
 declare -a REPO_LABELS=("nvim" "base" "overlay")
@@ -68,26 +69,28 @@ process_repo() {
     return 0
   fi
 
+  git -C "$repo_dir" add -A
+
+  if git -C "$repo_dir" diff --cached --quiet; then
+    echo "  Nothing staged — skipping."
+    return 0
+  fi
+
   echo ""
-  git -C "$repo_dir" status --short
-  echo ""
-  git -C "$repo_dir" diff --stat
+  git --no-pager -C "$repo_dir" diff --cached --stat
   echo ""
 
   read -r -p "  Commit changes? [Y/n] " yn
   case "${yn:-y}" in
-    [Nn]*) echo "  Skipped."; return 0 ;;
+    [Nn]*)
+      git -C "$repo_dir" reset --quiet
+      echo "  Skipped."
+      return 0
+      ;;
   esac
 
   local msg
   read_default "  Commit message" "$default_msg" msg
-
-  git_cmd "$repo_dir" "$use_base" add -A
-
-  if git -C "$repo_dir" diff --cached --quiet; then
-    echo "  Nothing staged after add — skipping commit."
-    return 0
-  fi
 
   git_cmd "$repo_dir" "$use_base" commit -m "$msg"
 
@@ -100,7 +103,14 @@ process_repo() {
     read -r -p "  Push? [Y/n] " push_yn
     case "${push_yn:-y}" in
       [Nn]*) echo "  Push skipped." ;;
-      *) git -C "$repo_dir" push ;;
+      *)
+        if [[ "$use_base" -eq 1 && -n "$BASE_CONTRIBUTOR_SSH_KEY" ]]; then
+          GIT_SSH_COMMAND="ssh -i ${BASE_CONTRIBUTOR_SSH_KEY} -o IdentitiesOnly=yes" \
+            git -C "$repo_dir" push
+        else
+          git -C "$repo_dir" push
+        fi
+        ;;
     esac
   fi
 }
