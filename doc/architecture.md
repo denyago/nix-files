@@ -115,6 +115,7 @@ Declares options that all modules can read:
 | Option | Type | Description |
 |--------|------|-------------|
 | `username` | string | macOS username |
+| `fullName` | string | Full name (git config, etc.) |
 | `email` | string | Git email |
 | `nixDir` | string | Absolute path to the overlay repo |
 | `hostname` | string | Machine hostname (darwinConfigurations key) |
