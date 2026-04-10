@@ -49,9 +49,12 @@ modules/
 
 my-nix/                     CLI tool (top-level, almost standalone)
   my-nix.nix                Flake-parts module: builds + installs the CLI
-  cli.sh                    Main script (apply, upgrade, cleanup)
-  update.sh                 Upgrade logic (flake update + brew + preview)
-  _my-nix                   Zsh completions
+  scripts/
+    cli.sh                  Main script (apply, commit, upgrade, cleanup)
+    update.sh               Upgrade logic (pull submodules + flake update + brew + preview)
+    commit.sh               Inside-out commit & push flow (nvim → base → overlay)
+  completions/
+    _my-nix                 Zsh completions
 ```
 
 ## How modules work
@@ -112,15 +115,18 @@ configurations.darwin.${config.hostname}.module = {
 
 Declares options that all modules can read:
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `username` | string | macOS username |
-| `fullName` | string | Full name (git config, etc.) |
-| `email` | string | Git email |
-| `nixDir` | string | Absolute path to the overlay repo |
-| `hostname` | string | Machine hostname (darwinConfigurations key) |
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `username` | string | — | macOS username |
+| `fullName` | string | — | Full name (git config, etc.) |
+| `email` | string | — | Git email |
+| `nixDir` | string | — | Absolute path to the overlay repo |
+| `hostname` | string | — | Machine hostname (darwinConfigurations key) |
+| `baseContributor.name` | string | `""` | Git author name for base/nvim commits |
+| `baseContributor.email` | string | `""` | Git author email for base/nvim commits |
+| `baseContributor.sshKey` | string | `""` | SSH key path for pushing to base/nvim repos |
 
-These are set by `identity.nix` in each overlay repo.
+These are set by `identity.nix` in each overlay repo. The `baseContributor` options are useful when the overlay uses a different git identity than the base repo (e.g. work email vs personal email).
 
 ## Overlay repos
 

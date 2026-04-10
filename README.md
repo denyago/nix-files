@@ -39,6 +39,13 @@ git submodule update --init --recursive
   email = "me@example.com";
   nixDir = "/Users/myuser/my-nix";
   hostname = "My-MacBook-Pro";
+
+  # Optional: git identity for commits to base and nvim submodules.
+  # When set, `my-nix commit` uses this identity for base/nvim repos
+  # and the default git config for the overlay repo.
+  # baseContributor.name = "My Name";
+  # baseContributor.email = "me@example.com";
+  # baseContributor.sshKey = "$HOME/.ssh/my_key";
 }
 ```
 
@@ -100,20 +107,23 @@ Create modules under `modules/` in your overlay repo. Each module registers feat
 
 Attribute keys must be unique across base + overlay (e.g. `cli-tools-extra`, not `cli-tools`).
 
-## Updating shared config
-
-```bash
-cd base && git pull origin master && cd ..
-git add base && git commit -m "Update base"
-my-nix apply
-```
-
 ## Daily usage (`my-nix`)
 
 `my-nix` works from any directory.
 
 | Command | Description |
 |---------|-------------|
-| `my-nix apply` | Apply nix-darwin configuration |
-| `my-nix upgrade` | Update flake inputs + Homebrew, preview changes, apply |
+| `my-nix apply` | Apply nix-darwin configuration, then commit & push |
+| `my-nix commit` | Commit & push changes across nvim, base, and overlay repos |
+| `my-nix upgrade` | Pull submodules, update flake inputs + Homebrew, apply, then commit & push |
 | `my-nix cleanup` | Delete old generations, garbage collect, optimise store |
+
+### Commit flow
+
+`my-nix commit` (also runs automatically after `apply` and `upgrade`) walks through repos inside-out:
+
+1. **nvim** — the LazyVim config submodule
+2. **base** — the shared modules submodule
+3. **overlay** — your environment-specific repo
+
+For each dirty repo it shows a diff summary, prompts for a commit message (with a sensible default), and offers to push. If `baseContributor` is configured in `identity.nix`, commits to nvim and base use that identity and SSH key, while the overlay uses your default git config.
