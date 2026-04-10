@@ -9,7 +9,7 @@
     };
     nixDir = lib.mkOption {
       type = lib.types.singleLineStr;
-      description = "Absolute path to the nix-files repo on disk (for my-nix CLI)";
+      description = "Absolute path to the overlay repo on disk";
     };
   };
 }

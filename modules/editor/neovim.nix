@@ -1,4 +1,7 @@
-{ ... }:
+{ config, ... }:
+let
+  baseDir = "${config.nixDir}/base";
+in
 {
   flake.modules.homeManager.neovim =
     { config, pkgs, ... }:
@@ -23,8 +26,8 @@
         ];
       };
 
-      # LazyVim config linked from the nvim submodule
+      # LazyVim config linked from the nvim submodule in the base repo
       xdg.configFile."nvim".source =
-        config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/nix-files/nvim";
+        config.lib.file.mkOutOfStoreSymlink "${baseDir}/modules/editor/nvim";
     };
 }
