@@ -44,10 +44,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-cd "${MY_NIX_DIR:-$SCRIPT_DIR/..}"
+NIX_DIR="${MY_NIX_DIR:-$SCRIPT_DIR/..}"
+cd "${NIX_DIR}"
 
 [[ -f flake.nix ]] || {
-  echo "❌ flake.nix not found in $SCRIPT_DIR"
+  echo "❌ flake.nix not found in $NIX_DIR"
   exit 1
 }
 command -v nix >/dev/null || {
@@ -59,6 +60,14 @@ command -v darwin-rebuild >/dev/null || {
   exit 1
 }
 
+echo "🔄 Pulling nvim submodule…"
+git -C "${NIX_DIR}/base/modules/editor/nvim" pull --rebase
+
+echo ""
+echo "🔄 Pulling base submodule…"
+git -C "${NIX_DIR}/base" pull --rebase
+
+echo ""
 echo "🔄 Updating flake inputs (flake.lock)…"
 nix flake update
 
@@ -126,6 +135,12 @@ else
     exit 0
     ;;
   esac
+fi
+
+commit_script="${NIX_DIR}/base/my-nix/scripts/commit.sh"
+if [[ -x "${commit_script}" ]]; then
+  # shellcheck disable=SC1090
+  source "${commit_script}"
 fi
 
 echo
