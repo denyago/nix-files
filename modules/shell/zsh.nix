@@ -24,27 +24,12 @@
         };
 
         initContent = lib.mkMerge [
-          (lib.mkOrder 550 ''
-            # Custom completions (my-nix) — must be before compinit
-            fpath=("$HOME/.zsh/completions" $fpath)
+          (lib.mkOrder 900 ''
+            export PATH="/usr/local/bin:$PATH:$HOME/.local/bin"
+            export LANG=en_US.UTF-8
           '')
 
-          (lib.mkOrder 900 ''
-            # https://docs.brew.sh/Shell-Completion
-            export FPATH="$(brew --prefix)/share/zsh/site-functions:$FPATH"
-
-            # PATH setup
-            export PATH="/usr/local/bin:$HOME/.rvm/bin:$PATH:$HOME/.local/bin:$HOME/.yarn/bin"
-            eval "$(/opt/homebrew/bin/brew shellenv)"
-
-            # Locale
-            export LANG=en_US.UTF-8
-
-            # iTerm2 integration (from YADR)
-            if [ -f "$HOME/.yadr/zsh/iterm2_shell_integration.zsh" ]; then
-              source "$HOME/.yadr/zsh/iterm2_shell_integration.zsh"
-            fi
-
+          (lib.mkOrder 1100 ''
             export PATH="${config.home.profileDirectory}/bin:$PATH"
           '')
         ];

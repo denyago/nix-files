@@ -7,6 +7,10 @@
         source = ./_my-nix;
       };
 
+      programs.zsh.initContent = lib.mkOrder 550 ''
+        fpath=("$HOME/.zsh/completions" $fpath)
+      '';
+
       home.packages = [
         (pkgs.writeShellApplication {
           name = "my-nix";

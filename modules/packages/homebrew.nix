@@ -32,4 +32,13 @@
       ];
     };
   };
+
+  flake.modules.homeManager.homebrew-shell =
+    { lib, ... }:
+    {
+      programs.zsh.initContent = lib.mkOrder 800 ''
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+        export FPATH="$(brew --prefix)/share/zsh/site-functions:$FPATH"
+      '';
+    };
 }
