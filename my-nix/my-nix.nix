@@ -4,7 +4,7 @@
     { pkgs, lib, ... }:
     {
       home.file.".zsh/completions/_my-nix" = {
-        source = ./_my-nix;
+        source = ./completions/_my-nix;
       };
 
       programs.zsh.initContent = lib.mkOrder 550 ''
@@ -20,7 +20,7 @@
           ];
           text = ''
             export MY_NIX_DIR="${config.nixDir}"
-            ${builtins.readFile ./cli.sh}
+            ${builtins.readFile ./scripts/cli.sh}
           '';
         })
       ];

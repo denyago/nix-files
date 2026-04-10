@@ -29,7 +29,7 @@ apply)
 
 upgrade)
   SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-  update_script="${MY_NIX_DIR:+${MY_NIX_DIR}/base/my-nix/update.sh}"
+  update_script="${MY_NIX_DIR:+${MY_NIX_DIR}/base/my-nix/scripts/update.sh}"
   update_script="${update_script:-${SCRIPT_DIR}/update.sh}"
 
   if [[ -x "${update_script}" ]]; then
