@@ -1,79 +1,117 @@
-# Denys' Nix files
+# denyago-nix-files
 
-Supposed to be shared across multiple computers.
-So far, MacOS only. And this is the upstream for my personal laptop and work laptop that has some overrides.
+Shared nix-darwin + Home Manager base modules using the [Dendritic pattern](https://github.com/vic/dendritic).
 
-## Quick start
-- `curl -fsSL https://install.determinate.systems/nix | sh -s -- install --prefer-upstream-nix`
-- `nix run "nixpkgs#hello"`
-- `git clone ... `
-- `cd nix-files`
-- `git submodule update --init --recursive`
-- edit the username and email in the `user-profile.nix`
-- `sudo nix run nix-darwin -- switch --flake .`
-- restart some MacOS processes:
+This repo is a **library of feature modules**. It doesn't build a machine on its own -- it's consumed as a git submodule by environment-specific overlay repos (home laptop, work laptop, etc.) that provide identity and extra packages.
+
+## How it works
 
 ```
-# Restart Finder (for Finder, global domain, and file-related settings)
-killall Finder
-
-# Restart Dock (for Dock settings)
-killall Dock
-
-# Restart SystemUIServer (for global domain, menu bar, and UI-related preferences)
-killall SystemUIServer
-
-# Restart cfprefsd (preferences daemon, helps with caching issues)
-killall cfprefsd
+overlay repo (home or work)
+  flake.nix ------> import-tree ./base/modules   (shared features)
+  |                  import-tree ./modules         (overlay-specific)
+  |
+  base/  <--- git submodule pointing here
+  modules/
+    identity.nix    (username, email, nixDir)
+    packages/       (extra homebrew casks, CLI tools)
+    ...
 ```
 
-... or reboot.
+See [doc/architecture.md](doc/architecture.md) for full details.
 
-Afterwards:
-- go to iTerm2 settings and select one of the Nix -controlled profiles as default
+## Quick start: creating a new overlay
 
-## Daily usage (`my-nix`)
-
-`my-nix` is the single entry point for working with this repo.
-
-### Apply configuration
+1. Create a new repo and add this one as a submodule:
 
 ```bash
+mkdir my-nix && cd my-nix && git init
+git submodule add <this-repo-url> base
+git submodule update --init --recursive
+```
+
+2. Create `modules/identity.nix`:
+
+```nix
+{
+  username = "myuser";
+  email = "me@example.com";
+  nixDir = "/Users/myuser/my-nix";
+}
+```
+
+3. Create `flake.nix`:
+
+```nix
+{
+  inputs = {
+    self.submodules = true;
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nix-darwin.url = "github:nix-darwin/nix-darwin/master";
+    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
+    import-tree.url = "github:vic/import-tree";
+  };
+
+  outputs = inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        (inputs.import-tree ./base/modules)
+        (inputs.import-tree ./base/my-nix)
+        (inputs.import-tree ./modules)
+      ];
+    };
+}
+```
+
+4. Build and apply:
+
+```bash
+nix flake lock
+sudo nix run nix-darwin -- switch --flake .
+```
+
+5. Restart macOS services or reboot:
+
+```bash
+killall Finder Dock SystemUIServer cfprefsd
+```
+
+6. In iTerm2, select one of the Nix-managed profiles as default.
+
+## Adding overlay-specific packages
+
+Create modules under `modules/` in your overlay repo. Each module registers features under unique attribute keys:
+
+```nix
+# modules/packages/cli-tools.nix
+{ ... }:
+{
+  flake.modules.homeManager.cli-tools-extra = { pkgs, ... }: {
+    home.packages = with pkgs; [ some-tool another-tool ];
+  };
+}
+```
+
+Attribute keys must be unique across base + overlay (e.g. `cli-tools-extra`, not `cli-tools`).
+
+## Updating shared config
+
+```bash
+cd base && git pull origin master && cd ..
+git add base && git commit -m "Update base"
 my-nix apply
 ```
 
----
+## Daily usage (`my-nix`)
 
-### Upgrade packages (Nix + Homebrew)
+`my-nix` works from any directory.
 
-```bash
-my-nix upgrade
-```
-
----
-
-### Development helpers
-
-#### Create a patch from this repo and apply it elsewhere
-
-```bash
-my-nix dev patch
-```
-
-Useful for porting **personal-only changes** into another checkout.
-
----
-
-#### Push current branch
-
-```bash
-my-nix dev push
-```
-
----
-
-#### Merge upstream non-interactively
-
-```bash
-my-nix dev merge-upstream
-```
+| Command | Description |
+|---------|-------------|
+| `my-nix apply` | Apply nix-darwin configuration |
+| `my-nix upgrade` | Update flake inputs + Homebrew, preview changes, apply |
+| `my-nix cleanup` | Delete old generations, garbage collect, optimise store |
