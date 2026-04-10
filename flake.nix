@@ -1,12 +1,9 @@
 {
-  description = "nix-darwin + Home Manager system for denyago";
+  description = "Shared nix-darwin + Home Manager base modules (Dendritic pattern)";
 
   inputs = {
-    self = {
-      submodules = true;
-    };
+    self.submodules = true;
 
-    # You used unstable, keeping it:
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
@@ -14,45 +11,19 @@
 
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
+
+    import-tree.url = "github:vic/import-tree";
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      nix-darwin,
-      home-manager,
-      ...
-    }:
-    let
-      system = "aarch64-darwin";
-      userProfile = import ./user-profile.nix;
-      pkgs = nixpkgs.legacyPackages.${system};
-      workInternal = (import ./work-internal.nix) { inherit pkgs; };
-    in
-    {
-      darwinConfigurations."Denyss-MacBook-Pro" = nix-darwin.lib.darwinSystem {
-        inherit system;
-        specialArgs = { inherit userProfile workInternal; };
-
-        modules = [
-          ./darwin.nix
-
-          # Home-manager as a nix-darwin module
-          home-manager.darwinModules.home-manager
-
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-
-            # Back up existing dotfiles instead of refusing to overwrite
-            home-manager.backupFileExtension = "bak";
-
-            home-manager.extraSpecialArgs = { inherit userProfile workInternal; };
-
-            home-manager.users.${userProfile.username} = import ./home.nix;
-          }
-        ];
-      };
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        (inputs.import-tree ./modules)
+        (inputs.import-tree ./my-nix)
+      ];
     };
 }
