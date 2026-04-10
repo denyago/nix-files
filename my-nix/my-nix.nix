@@ -1,7 +1,7 @@
-{ ... }:
+{ config, ... }:
 {
   flake.modules.homeManager.my-nix =
-    { pkgs, ... }:
+    { pkgs, lib, ... }:
     {
       home.file.".zsh/completions/_my-nix" = {
         source = ./_my-nix;
@@ -14,7 +14,10 @@
             pkgs.git
             pkgs.nix
           ];
-          text = builtins.readFile ./cli.sh;
+          text = ''
+            export MY_NIX_DIR="${config.nixDir}"
+            ${builtins.readFile ./cli.sh}
+          '';
         })
       ];
     };

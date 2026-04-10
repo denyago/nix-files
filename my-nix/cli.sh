@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# MY_NIX_DIR is set by the Nix module that installs this script.
+# Fall back to the directory containing this script if unset.
+NIX_DIR="${MY_NIX_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/..}"
+
 usage() {
   cat <<'EOF'
 Usage:
-  ./cli.sh apply
-  ./cli.sh upgrade [args...]
-  ./cli.sh dev patch
-  ./cli.sh dev push
-  ./cli.sh dev merge-upstream
+  my-nix apply
+  my-nix upgrade [args...]
+  my-nix cleanup
 EOF
 }
 
@@ -22,63 +24,34 @@ shift || true
 
 case "${cmd}" in
 apply)
-  exec sudo darwin-rebuild switch --flake .
+  exec sudo darwin-rebuild switch --flake "${NIX_DIR}"
   ;;
 
 upgrade)
-  if [[ -x "./scripts/update.sh" ]]; then
-    exec "./scripts/update.sh" "$@"
+  SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  update_script="${MY_NIX_DIR:+${MY_NIX_DIR}/base/my-nix/update.sh}"
+  update_script="${update_script:-${SCRIPT_DIR}/update.sh}"
+
+  if [[ -x "${update_script}" ]]; then
+    exec "${update_script}" "$@"
   else
-    die "No upgrade script found. Expected executable: ./scripts/update.sh"
+    die "No upgrade script found at: ${update_script}"
   fi
   ;;
 
 cleanup)
-  echo "🧹 Cleaning up Nix (keeping last 5 generations)..."
+  echo "Cleaning up Nix (keeping last 5 generations)..."
 
-  echo "→ Deleting old generations (keep 5)"
+  echo "-> Deleting old generations (keep 5)"
   nix-env --delete-generations +5
 
-  echo "→ Garbage collecting unreferenced store paths"
+  echo "-> Garbage collecting unreferenced store paths"
   nix-store --gc
 
-  echo "→ Optimizing store (hardlink duplicates)"
+  echo "-> Optimizing store (hardlink duplicates)"
   nix-store --optimise
 
-  echo "✅ Cleanup complete"
-  ;;
-
-dev)
-  sub="${1:-}"
-  shift || true
-  case "${sub}" in
-  patch)
-    # Run this from the upstream-pointing folder. It applies the diff from ~/nix-files.
-    exec bash -lc '
-      set -e
-      git -C ~/nix-files diff | git apply -
-      git add -A
-      git commit
-    '
-    ;;
-  push)
-    exec git push origin master
-    ;;
-  merge-upstream)
-    exec bash -lc '
-      set -e
-      git fetch --all
-      git merge --no-edit upstream/master
-      git submodule update --init --recursive
-    '
-    ;;
-  "" | -h | --help | help)
-    usage
-    ;;
-  *)
-    die "Unknown dev subcommand: ${sub}"
-    ;;
-  esac
+  echo "Cleanup complete"
   ;;
 
 "" | -h | --help | help)

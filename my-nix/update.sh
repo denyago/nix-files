@@ -44,7 +44,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/.."
+cd "${MY_NIX_DIR:-$SCRIPT_DIR/..}"
 
 [[ -f flake.nix ]] || {
   echo "❌ flake.nix not found in $SCRIPT_DIR"
