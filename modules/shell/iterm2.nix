@@ -14,8 +14,9 @@
       };
 
       programs.zsh.initContent = lib.mkOrder 950 ''
-        if [ -f "$HOME/.yadr/zsh/iterm2_shell_integration.zsh" ]; then
-          source "$HOME/.yadr/zsh/iterm2_shell_integration.zsh"
+        # Bundled with iTerm.app — always matches the installed version
+        if [ -f /Applications/iTerm.app/Contents/Resources/iterm2_shell_integration.zsh ]; then
+          source /Applications/iTerm.app/Contents/Resources/iterm2_shell_integration.zsh
         fi
       '';
     };
