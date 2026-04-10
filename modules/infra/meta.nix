@@ -11,5 +11,9 @@
       type = lib.types.singleLineStr;
       description = "Absolute path to the overlay repo on disk";
     };
+    hostname = lib.mkOption {
+      type = lib.types.singleLineStr;
+      description = "Machine hostname (used as darwinConfigurations key)";
+    };
   };
 }

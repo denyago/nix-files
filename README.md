@@ -37,6 +37,7 @@ git submodule update --init --recursive
   username = "myuser";
   email = "me@example.com";
   nixDir = "/Users/myuser/my-nix";
+  hostname = "My-MacBook-Pro";
 }
 ```
 

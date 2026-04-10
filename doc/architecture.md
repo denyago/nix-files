@@ -100,7 +100,7 @@ options.configurations.darwin = lib.mkOption {
 Collects all registered modules and composes the final darwin configuration:
 
 ```nix
-configurations.darwin."Denyss-MacBook-Pro".module = {
+configurations.darwin.${config.hostname}.module = {
   imports = lib.attrValues config.flake.modules.darwin;
   home-manager.users.${config.username} = {
     imports = lib.attrValues config.flake.modules.homeManager;
@@ -117,6 +117,7 @@ Declares options that all modules can read:
 | `username` | string | macOS username |
 | `email` | string | Git email |
 | `nixDir` | string | Absolute path to the overlay repo |
+| `hostname` | string | Machine hostname (darwinConfigurations key) |
 
 These are set by `identity.nix` in each overlay repo.
 

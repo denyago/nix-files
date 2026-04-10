@@ -4,7 +4,7 @@ let
   hm = config.flake.modules.homeManager;
 in
 {
-  configurations.darwin."Denyss-MacBook-Pro".module = {
+  configurations.darwin.${config.hostname}.module = {
     imports = lib.attrValues darwin;
 
     home-manager = {
