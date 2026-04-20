@@ -24,6 +24,10 @@ in
           ripgrep
           fd
         ];
+
+        # Prevent home-manager from writing init.lua to ~/.config/nvim/init.lua,
+        # since the entire nvim config dir is managed via an out-of-store symlink.
+        sideloadInitLua = true;
       };
 
       # LazyVim config linked from the nvim submodule in the base repo
