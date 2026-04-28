@@ -47,6 +47,7 @@
         k9s
         kubernetes-helm
         duckdb
+        usql
 
         awscli
         go-task
