@@ -42,6 +42,7 @@
         marp-cli
 
         lazydocker
+        devcontainer
         dive
         k9s
         kubernetes-helm
@@ -49,6 +50,7 @@
 
         awscli
         go-task
+        nvfetcher
 
         # LazyVim utilities
         fzf

@@ -71,6 +71,14 @@ echo ""
 echo "🔄 Updating flake inputs (flake.lock)…"
 nix flake update
 
+echo ""
+echo "🔄 Updating nvfetcher sources…"
+find "${NIX_DIR}" -name "nvfetcher.toml" | while read -r toml; do
+  dir="$(dirname "$toml")"
+  echo "  → $toml"
+  nvfetcher -c "$toml" -o "${dir}/_sources"
+done
+
 echo
 echo "🔨 Building new system (no activation)…"
 darwin-rebuild build --flake .

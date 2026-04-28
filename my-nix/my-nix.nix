@@ -17,6 +17,7 @@
           runtimeInputs = [
             pkgs.git
             pkgs.nix
+            pkgs.nvfetcher
           ];
           text = ''
             export MY_NIX_DIR="${config.nixDir}"

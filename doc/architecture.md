@@ -36,6 +36,10 @@ modules/
     homebrew.nix            Shared Homebrew casks and brews
     cli-tools.nix           Shared CLI tools (ripgrep, git, nodejs, go, etc.)
     fonts.nix               Nerd Fonts
+    github-distributed/     Pre-built binaries fetched from GitHub releases (see below)
+      nvfetcher.toml        Source specs (one [entry] per tool)
+      _sources/             Generated lockfile — committed to git, do not edit
+      <tool>.nix            One module file per tool
 
   shell/                    Shell and terminal
     zsh.nix                 Zsh + oh-my-zsh configuration
@@ -156,6 +160,75 @@ outputs = inputs:
 ```
 
 Overlay modules register under unique attribute keys (e.g. `cli-tools-extra`, `homebrew-extra`) so they don't collide with base module keys.
+
+## Pinning external binaries with nvfetcher
+
+[nvfetcher](https://github.com/berberman/nvfetcher) tracks upstream releases (GitHub tags, PyPI, etc.) and generates a `_sources/generated.nix` lockfile that derivations read instead of hardcoded hashes.
+
+### When to use it
+
+Use `nvfetcher` for packages that aren't in nixpkgs and are distributed as pre-built binaries (e.g. a GitHub release asset). Don't use it for things already in nixpkgs — just take the package from `pkgs` directly.
+
+### Convention: `github-distributed/` directory
+
+Pre-built GitHub release binaries live under a `github-distributed/` subdirectory inside any `packages/` directory (base or overlay). This keeps the tooling (`nvfetcher.toml`, `_sources/`) and the tool modules co-located and clearly separated from nixpkgs-sourced packages.
+
+```
+packages/
+  cli-tools.nix
+  github-distributed/
+    nvfetcher.toml          ← one [entry] per tool
+    _sources/
+      generated.nix         ← committed lockfile, do not edit manually
+      generated.json
+    my-tool.nix             ← one .nix file per tool
+```
+
+`import-tree` skips `_`-prefixed directories, so `_sources/` is never accidentally imported.
+
+### Adding a new tool
+
+1. Add an entry to `github-distributed/nvfetcher.toml`:
+
+```toml
+[my-tool]
+src.github = "owner/repo"
+src.tag = "latest"
+fetch.url = "https://github.com/owner/repo/releases/download/$ver/my-tool-macos-aarch64"
+fetch.url-template = true
+```
+
+2. Regenerate the lockfile:
+
+```bash
+cd modules/packages/github-distributed
+nvfetcher -c nvfetcher.toml -o _sources
+```
+
+3. Create `github-distributed/my-tool.nix`:
+
+```nix
+{ ... }:
+{
+  flake.modules.homeManager.my-tool =
+    { pkgs, ... }:
+    let
+      sources = pkgs.callPackage ./_sources/generated.nix { };
+      my-tool = pkgs.stdenv.mkDerivation {
+        inherit (sources.my-tool) pname version src;
+        dontUnpack = true;
+        installPhase = "install -Dm755 $src $out/bin/my-tool";
+      };
+    in
+    { home.packages = [ my-tool ]; };
+}
+```
+
+4. Commit `nvfetcher.toml`, `_sources/generated.nix`, and `my-tool.nix` together — the lockfile belongs in git, same as `flake.lock`.
+
+### Auto-update
+
+`my-nix upgrade` automatically runs nvfetcher for every `nvfetcher.toml` found in the overlay repo before building. No manual step needed after the initial setup.
 
 ## Key technologies
 
