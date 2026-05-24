@@ -147,7 +147,12 @@ apply() {
 if [[ "$AUTO_YES" -eq 1 ]]; then
   apply
 else
-  read -r -p "🚀 Apply BOTH Homebrew upgrades and nix-darwin switch? [y/N] " yn
+  if [[ "$DO_BREW" -eq 1 ]]; then
+    prompt="🚀 Apply BOTH Homebrew upgrades and nix-darwin switch? [y/N] "
+  else
+    prompt="🚀 Apply nix-darwin switch? [y/N] "
+  fi
+  read -r -p "$prompt" yn || true
   case "$yn" in
   [Yy]*) apply ;;
   *)
