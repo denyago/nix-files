@@ -29,6 +29,17 @@ resolve_brew() {
   BREW_BIN="${prefix}/bin/brew"
 }
 
+update_flake() {
+  local github_token
+
+  if command -v gh >/dev/null && github_token="$(gh auth token 2>/dev/null)" && [[ -n "${github_token}" ]]; then
+    echo "  → using GitHub token from gh auth"
+    NIX_CONFIG="${NIX_CONFIG:+${NIX_CONFIG}$'\n'}access-tokens = github.com=${github_token}" nix flake update
+  else
+    nix flake update
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
   --no-brew)
@@ -81,7 +92,7 @@ git -C "${NIX_DIR}/base" pull --rebase
 
 echo ""
 echo "🔄 Updating flake inputs (flake.lock)…"
-nix flake update
+update_flake
 
 echo ""
 echo "🔄 Updating nvfetcher sources…"
