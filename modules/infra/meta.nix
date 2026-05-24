@@ -19,6 +19,11 @@
       type = lib.types.singleLineStr;
       description = "Machine hostname (used as darwinConfigurations key)";
     };
+    homebrewCleanup = lib.mkOption {
+      type = lib.types.enum [ "none" "uninstall" "zap" ];
+      default = "zap";
+      description = "Homebrew onActivation.cleanup strategy";
+    };
     baseContributor.name = lib.mkOption {
       type = lib.types.str;
       default = "";

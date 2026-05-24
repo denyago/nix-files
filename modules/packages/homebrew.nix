@@ -17,7 +17,7 @@ in
 
       homebrew = {
         enable = true;
-        onActivation.cleanup = "zap";
+        onActivation.cleanup = flakeConfig.homebrewCleanup;
 
         casks = [
           # Core utilities
