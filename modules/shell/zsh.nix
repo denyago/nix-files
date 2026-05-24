@@ -25,7 +25,7 @@
 
         initContent = lib.mkMerge [
           (lib.mkOrder 900 ''
-            export PATH="/usr/local/bin:$PATH:$HOME/.local/bin"
+            export PATH="$PATH:$HOME/.local/bin"
             export LANG=en_US.UTF-8
           '')
 
