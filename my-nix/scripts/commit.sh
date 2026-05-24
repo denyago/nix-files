@@ -56,7 +56,7 @@ read_default() {
 push_repo() {
   local repo_dir="$1" use_base="$2"
   if [[ "$use_base" -eq 1 && -n "$BASE_CONTRIBUTOR_SSH_KEY" ]]; then
-    GIT_SSH_COMMAND="ssh -i ${BASE_CONTRIBUTOR_SSH_KEY} -o IdentitiesOnly=yes" \
+    GIT_SSH_COMMAND="ssh -F /dev/null -i ${BASE_CONTRIBUTOR_SSH_KEY} -o IdentitiesOnly=yes" \
       git -C "$repo_dir" push
   else
     git -C "$repo_dir" push
