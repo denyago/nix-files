@@ -139,7 +139,7 @@ if [[ "$DO_SWITCH" -eq 0 ]]; then
   exit 0
 fi
 
-if [[ "$NIX_CHANGED" -eq 0 && "$DO_BREW" -eq 0 ]]; then
+if [[ "$NIX_CHANGED" -eq 0 && ( "$DO_BREW" -eq 0 || -z "$BREW_OUTDATED_FORMULAE" ) ]]; then
   echo "✅ Nothing to do — Nix and Homebrew are up to date."
   exit 0
 fi
