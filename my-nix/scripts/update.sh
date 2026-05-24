@@ -95,10 +95,19 @@ echo
 echo "🔨 Building new system (no activation)…"
 darwin-rebuild build --flake .
 
+NIX_CHANGED=0
+if [[ "$(realpath /run/current-system)" != "$(realpath ./result)" ]]; then
+  NIX_CHANGED=1
+fi
+
 echo
 echo "📦 Nix changes (current -> ./result):"
-# nvd sometimes returns non-zero depending on differences; don't fail the script on preview
-nix run nixpkgs#nvd -- diff /run/current-system ./result || true
+if [[ "$NIX_CHANGED" -eq 1 ]]; then
+  # nvd sometimes returns non-zero depending on differences; don't fail the script on preview
+  nix run nixpkgs#nvd -- diff /run/current-system ./result || true
+else
+  echo "(none)"
+fi
 
 BREW_OUTDATED_FORMULAE=""
 BREW_OUTDATED_CASKS=""
@@ -130,8 +139,16 @@ if [[ "$DO_SWITCH" -eq 0 ]]; then
   exit 0
 fi
 
+if [[ "$NIX_CHANGED" -eq 0 && "$DO_BREW" -eq 0 ]]; then
+  echo "✅ Nothing to do — Nix and Homebrew are up to date."
+  exit 0
+fi
+if [[ "$NIX_CHANGED" -eq 0 && -n "$BREW_OUTDATED_FORMULAE" ]]; then
+  echo "ℹ️  No Nix changes — will only apply Homebrew upgrades."
+fi
+
 apply() {
-  if [[ "$DO_BREW" -eq 1 ]]; then
+  if [[ "$DO_BREW" -eq 1 && -n "$BREW_OUTDATED_FORMULAE" ]]; then
     echo
     echo "⬆️  Applying Homebrew upgrades…"
     "${BREW_BIN}" upgrade || true
@@ -139,18 +156,22 @@ apply() {
     "${BREW_BIN}" cleanup || true
   fi
 
-  echo
-  echo "🚀 Applying nix-darwin switch…"
-  sudo darwin-rebuild switch --flake .
+  if [[ "$NIX_CHANGED" -eq 1 ]]; then
+    echo
+    echo "🚀 Applying nix-darwin switch…"
+    sudo darwin-rebuild switch --flake .
+  fi
 }
 
 if [[ "$AUTO_YES" -eq 1 ]]; then
   apply
 else
-  if [[ "$DO_BREW" -eq 1 ]]; then
+  if [[ "$NIX_CHANGED" -eq 1 && "$DO_BREW" -eq 1 && -n "$BREW_OUTDATED_FORMULAE" ]]; then
     prompt="🚀 Apply BOTH Homebrew upgrades and nix-darwin switch? [y/N] "
-  else
+  elif [[ "$NIX_CHANGED" -eq 1 ]]; then
     prompt="🚀 Apply nix-darwin switch? [y/N] "
+  else
+    prompt="🚀 Apply Homebrew upgrades? [y/N] "
   fi
   read -r -p "$prompt" yn || true
   case "$yn" in
