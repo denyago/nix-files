@@ -4,6 +4,7 @@ set -euo pipefail
 DO_BREW=1
 AUTO_YES=0
 DO_SWITCH=1
+BREW_BIN=""
 
 usage() {
   cat <<'EOF'
@@ -15,6 +16,17 @@ Options:
   --build-only   Update + build + show previews, but do not apply.
   -h, --help     Show help.
 EOF
+}
+
+resolve_brew() {
+  local prefix
+
+  [[ -n "${MY_NIX_HOSTNAME:-}" ]] || return 1
+
+  prefix="$(nix eval --raw "${NIX_DIR}#darwinConfigurations.${MY_NIX_HOSTNAME}.config.homebrew.prefix" 2>/dev/null || true)"
+  [[ -n "${prefix}" && -x "${prefix}/bin/brew" ]] || return 1
+
+  BREW_BIN="${prefix}/bin/brew"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -91,15 +103,15 @@ nix run nixpkgs#nvd -- diff /run/current-system ./result || true
 BREW_OUTDATED_FORMULAE=""
 BREW_OUTDATED_CASKS=""
 if [[ "$DO_BREW" -eq 1 ]]; then
-  if command -v brew >/dev/null; then
+  if resolve_brew; then
     echo
-    echo "🍺 Homebrew: updating taps/formula metadata…"
-    brew update
+    echo "🍺 Homebrew: updating taps/formula metadata with ${BREW_BIN}…"
+    "${BREW_BIN}" update
 
     echo
     echo "📦 Homebrew pending upgrades (formulae):"
     # --verbose prints "foo (old) < new" style when available
-    BREW_OUTDATED_FORMULAE="$(brew outdated --verbose || true)"
+    BREW_OUTDATED_FORMULAE="$("${BREW_BIN}" outdated --verbose || true)"
     if [[ -n "$BREW_OUTDATED_FORMULAE" ]]; then
       echo "$BREW_OUTDATED_FORMULAE"
     else
@@ -107,7 +119,7 @@ if [[ "$DO_BREW" -eq 1 ]]; then
     fi
   else
     echo
-    echo "⚠️  brew not found; skipping Homebrew preview/upgrade."
+    echo "⚠️  Nix-selected brew not found; skipping Homebrew preview/upgrade."
     DO_BREW=0
   fi
 fi
@@ -122,9 +134,9 @@ apply() {
   if [[ "$DO_BREW" -eq 1 ]]; then
     echo
     echo "⬆️  Applying Homebrew upgrades…"
-    brew upgrade || true
+    "${BREW_BIN}" upgrade || true
     echo "🧹 Cleaning up Homebrew…"
-    brew cleanup || true
+    "${BREW_BIN}" cleanup || true
   fi
 
   echo

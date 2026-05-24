@@ -21,6 +21,7 @@
           ];
           text = ''
             export MY_NIX_DIR="${config.nixDir}"
+            export MY_NIX_HOSTNAME="${config.hostname}"
             export MY_NIX_BASE_CONTRIBUTOR_NAME="${config.baseContributor.name}"
             export MY_NIX_BASE_CONTRIBUTOR_EMAIL="${config.baseContributor.email}"
             export MY_NIX_BASE_CONTRIBUTOR_SSH_KEY="${config.baseContributor.sshKey}"
