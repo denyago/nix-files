@@ -5,6 +5,7 @@ DO_BREW=1
 AUTO_YES=0
 DO_SWITCH=1
 BREW_BIN=""
+FLAKE_UPDATE_OUTPUT=""
 
 usage() {
   cat <<'EOF'
@@ -31,12 +32,40 @@ resolve_brew() {
 
 update_flake() {
   local github_token
+  local flake_update_output
 
   if command -v gh >/dev/null && github_token="$(gh auth token 2>/dev/null)" && [[ -n "${github_token}" ]]; then
     echo "  → using GitHub token from gh auth"
-    NIX_CONFIG="${NIX_CONFIG:+${NIX_CONFIG}$'\n'}access-tokens = github.com=${github_token}" nix flake update
+    flake_update_output="$(NIX_CONFIG="${NIX_CONFIG:+${NIX_CONFIG}$'\n'}access-tokens = github.com=${github_token}" nix flake update 2>&1)"
   else
-    nix flake update
+    flake_update_output="$(nix flake update 2>&1)"
+  fi
+
+  FLAKE_UPDATE_OUTPUT="${flake_update_output}"
+  printf '%s\n' "${flake_update_output}"
+}
+
+summarize_flake_updates() {
+  local proposed=()
+  local line
+
+  while IFS= read -r line; do
+    case "${line}" in
+    *"Updated input 'nixpkgs':"*)
+      proposed+=("Nixpkgs package set")
+      ;;
+    *"Updated input 'home-manager':"*)
+      proposed+=("Home Manager release")
+      ;;
+    esac
+  done <<< "${FLAKE_UPDATE_OUTPUT}"
+
+  if [[ "${#proposed[@]}" -gt 0 ]]; then
+    echo
+    echo "📣 Proposed release updates:"
+    for line in "${proposed[@]}"; do
+      echo "  - ${line}"
+    done
   fi
 }
 
@@ -93,6 +122,7 @@ git -C "${NIX_DIR}/base" pull --rebase
 echo ""
 echo "🔄 Updating flake inputs (flake.lock)…"
 update_flake
+summarize_flake_updates
 
 echo ""
 echo "🔄 Updating nvfetcher sources…"
@@ -132,10 +162,22 @@ if [[ "$DO_BREW" -eq 1 ]]; then
     echo "📦 Homebrew pending upgrades (formulae):"
     # --verbose prints "foo (old) < new" style when available
     BREW_OUTDATED_FORMULAE="$("${BREW_BIN}" outdated --verbose || true)"
+    BREW_OUTDATED_CASKS="$("${BREW_BIN}" outdated --cask --verbose || true)"
+    if [[ -n "${BREW_OUTDATED_FORMULAE}" || -n "${BREW_OUTDATED_CASKS}" ]]; then
+      echo "📣 Proposed Homebrew updates:"
+    fi
     if [[ -n "$BREW_OUTDATED_FORMULAE" ]]; then
+      echo "  Formulae:"
       echo "$BREW_OUTDATED_FORMULAE"
     else
-      echo "(none)"
+      echo "  Formulae: (none)"
+    fi
+
+    if [[ -n "${BREW_OUTDATED_CASKS}" ]]; then
+      echo "  Casks:"
+      echo "${BREW_OUTDATED_CASKS}"
+    else
+      echo "  Casks: (none)"
     fi
   else
     echo
@@ -150,16 +192,16 @@ if [[ "$DO_SWITCH" -eq 0 ]]; then
   exit 0
 fi
 
-if [[ "$NIX_CHANGED" -eq 0 && ( "$DO_BREW" -eq 0 || -z "$BREW_OUTDATED_FORMULAE" ) ]]; then
+if [[ "$NIX_CHANGED" -eq 0 && ( "$DO_BREW" -eq 0 || ( -z "$BREW_OUTDATED_FORMULAE" && -z "$BREW_OUTDATED_CASKS" ) ) ]]; then
   echo "✅ Nothing to do — Nix and Homebrew are up to date."
   exit 0
 fi
-if [[ "$NIX_CHANGED" -eq 0 && -n "$BREW_OUTDATED_FORMULAE" ]]; then
+if [[ "$NIX_CHANGED" -eq 0 && ( -n "$BREW_OUTDATED_FORMULAE" || -n "$BREW_OUTDATED_CASKS" ) ]]; then
   echo "ℹ️  No Nix changes — will only apply Homebrew upgrades."
 fi
 
 apply() {
-  if [[ "$DO_BREW" -eq 1 && -n "$BREW_OUTDATED_FORMULAE" ]]; then
+  if [[ "$DO_BREW" -eq 1 && ( -n "$BREW_OUTDATED_FORMULAE" || -n "$BREW_OUTDATED_CASKS" ) ]]; then
     echo
     echo "⬆️  Applying Homebrew upgrades…"
     "${BREW_BIN}" upgrade || true
@@ -177,12 +219,12 @@ apply() {
 if [[ "$AUTO_YES" -eq 1 ]]; then
   apply
 else
-  if [[ "$NIX_CHANGED" -eq 1 && "$DO_BREW" -eq 1 && -n "$BREW_OUTDATED_FORMULAE" ]]; then
-    prompt="🚀 Apply BOTH Homebrew upgrades and nix-darwin switch? [y/N] "
+  if [[ "$NIX_CHANGED" -eq 1 && "$DO_BREW" -eq 1 && ( -n "$BREW_OUTDATED_FORMULAE" || -n "$BREW_OUTDATED_CASKS" ) ]]; then
+    prompt="🚀 Apply proposed Nix and Homebrew updates? [y/N] "
   elif [[ "$NIX_CHANGED" -eq 1 ]]; then
-    prompt="🚀 Apply nix-darwin switch? [y/N] "
+    prompt="🚀 Apply proposed Nix updates? [y/N] "
   else
-    prompt="🚀 Apply Homebrew upgrades? [y/N] "
+    prompt="🚀 Apply proposed Homebrew updates? [y/N] "
   fi
   read -r -p "$prompt" yn || true
   case "$yn" in
