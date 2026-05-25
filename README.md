@@ -116,7 +116,8 @@ Attribute keys must be unique across base + overlay (e.g. `cli-tools-extra`, not
 |---------|-------------|
 | `my-nix apply` | Apply nix-darwin configuration, then commit & push |
 | `my-nix commit` | Commit & push changes across nvim, base, and overlay repos |
-| `my-nix upgrade` | Pull submodules, update flake inputs + Homebrew, apply, then commit & push |
+| `my-nix upgrade` | Pull submodules, update packages/Homebrew within the current release, apply, then commit & push |
+| `my-nix do-release-upgrade` | Bump nixpkgs + Home Manager to the latest release train, then run the upgrade flow |
 | `my-nix cleanup` | Delete old generations, garbage collect, optimise store |
 
 ### Commit flow

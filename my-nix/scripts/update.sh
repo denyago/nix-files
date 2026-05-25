@@ -4,8 +4,10 @@ set -euo pipefail
 DO_BREW=1
 AUTO_YES=0
 DO_SWITCH=1
+DO_PULL=1
 BREW_BIN=""
 FLAKE_UPDATE_OUTPUT=""
+FLAKE_LOCK_BEFORE=""
 
 usage() {
   cat <<'EOF'
@@ -15,6 +17,7 @@ Options:
   --no-brew      Skip Homebrew update/preview/upgrade.
   --yes          Non-interactive: apply changes without prompting.
   --build-only   Update + build + show previews, but do not apply.
+  --skip-pull    Internal: skip submodule pull step.
   -h, --help     Show help.
 EOF
 }
@@ -30,9 +33,78 @@ resolve_brew() {
   BREW_BIN="${prefix}/bin/brew"
 }
 
+current_flake_release() {
+  local file_path="$1"
+  local input_name="$2"
+  local release
+
+  release="$(
+    grep -E "^[[:space:]]*${input_name}\.url = \"github:[^\"]+/[^\"]+/[^\"]+\";" "$file_path" 2>/dev/null \
+      | head -n 1 \
+      | sed -E 's#.*github:[^/]+/[^/]+/([^\"]+)";#\1#' \
+      || true
+  )"
+
+  printf '%s\n' "${release}"
+}
+
+latest_github_branch() {
+  local repo_slug="$1"
+  local branch_prefix="$2"
+
+  { git ls-remote --heads "https://github.com/${repo_slug}.git" "refs/heads/${branch_prefix}-*" 2>/dev/null || true; } \
+    | awk '{print $2}' \
+    | sed -E 's#refs/heads/##' \
+    | sort -V \
+    | tail -n 1
+}
+
+propose_release_bump() {
+  local label="$1"
+  local file_path="$2"
+  local input_name="$3"
+  local repo_slug="$4"
+  local branch_prefix="$5"
+  local current_release
+  local latest_release
+
+  current_release="$(current_flake_release "$file_path" "$input_name")"
+  [[ -n "${current_release}" ]] || return 0
+
+  latest_release="$(latest_github_branch "$repo_slug" "$branch_prefix")"
+  [[ -n "${latest_release}" ]] || return 0
+
+  if [[ "$(printf '%s\n%s\n' "${current_release}" "${latest_release}" | sort -V | tail -n 1)" != "${current_release}" ]]; then
+    echo "  - ${label}: ${current_release} -> ${latest_release}"
+  fi
+}
+
+summarize_release_bumps() {
+  local proposals=()
+  local line
+
+  while IFS= read -r line; do
+    proposals+=("${line}")
+  done < <(
+    propose_release_bump "Nixpkgs release" "flake.nix" "nixpkgs" "NixOS/nixpkgs" "nixos"
+    propose_release_bump "Home Manager release" "flake.nix" "home-manager" "nix-community/home-manager" "release"
+  )
+
+  if [[ "${#proposals[@]}" -gt 0 ]]; then
+    echo
+    echo "📣 Proposed release train bumps:"
+    printf '%s\n' "${proposals[@]}"
+  fi
+}
+
 update_flake() {
   local github_token
   local flake_update_output
+  local lockfile_before
+
+  lockfile_before="$(mktemp)"
+  cp flake.lock "${lockfile_before}"
+  FLAKE_LOCK_BEFORE="${lockfile_before}"
 
   if command -v gh >/dev/null && github_token="$(gh auth token 2>/dev/null)" && [[ -n "${github_token}" ]]; then
     echo "  → using GitHub token from gh auth"
@@ -46,19 +118,17 @@ update_flake() {
 }
 
 summarize_flake_updates() {
+  local diff_output
   local proposed=()
-  local line
 
-  while IFS= read -r line; do
-    case "${line}" in
-    *"Updated input 'nixpkgs':"*)
-      proposed+=("Nixpkgs package set")
-      ;;
-    *"Updated input 'home-manager':"*)
-      proposed+=("Home Manager release")
-      ;;
-    esac
-  done <<< "${FLAKE_UPDATE_OUTPUT}"
+  diff_output="$(git diff --no-index --unified=0 -- "${FLAKE_LOCK_BEFORE}" flake.lock 2>/dev/null || true)"
+
+  if grep -q '"nixpkgs"' <<< "${diff_output}"; then
+    proposed+=("Nixpkgs package set")
+  fi
+  if grep -q '"home-manager"' <<< "${diff_output}"; then
+    proposed+=("Home Manager release")
+  fi
 
   if [[ "${#proposed[@]}" -gt 0 ]]; then
     echo
@@ -66,7 +136,11 @@ summarize_flake_updates() {
     for line in "${proposed[@]}"; do
       echo "  - ${line}"
     done
+    echo "  Use my-nix do-release-upgrade to apply a release train bump."
   fi
+
+  rm -f "${FLAKE_LOCK_BEFORE}"
+  FLAKE_LOCK_BEFORE=""
 }
 
 while [[ $# -gt 0 ]]; do
@@ -81,6 +155,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   --build-only)
     DO_SWITCH=0
+    shift
+    ;;
+  --skip-pull)
+    DO_PULL=0
     shift
     ;;
   -h | --help)
@@ -112,15 +190,20 @@ command -v darwin-rebuild >/dev/null || {
   exit 1
 }
 
-echo "🔄 Pulling nvim submodule…"
-git -C "${NIX_DIR}/base/modules/editor/nvim" pull --rebase
+if [[ "$DO_PULL" -eq 1 ]]; then
+  echo "🔄 Pulling nvim submodule…"
+  git -C "${NIX_DIR}/base/modules/editor/nvim" pull --rebase
 
-echo ""
-echo "🔄 Pulling base submodule…"
-git -C "${NIX_DIR}/base" pull --rebase
+  echo ""
+  echo "🔄 Pulling base submodule…"
+  git -C "${NIX_DIR}/base" pull --rebase
+else
+  echo "🔄 Skipping submodule pulls (handled by release upgrade)…"
+fi
 
 echo ""
 echo "🔄 Updating flake inputs (flake.lock)…"
+summarize_release_bumps
 update_flake
 summarize_flake_updates
 

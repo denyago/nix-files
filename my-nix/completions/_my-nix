@@ -6,6 +6,7 @@ _my_nix() {
     'apply:Apply nix-darwin configuration'
     'commit:Commit and push changes across all repos'
     'upgrade:Upgrade nix and Homebrew packages'
+    'do-release-upgrade:Bump to the latest release train'
     'cleanup:Clean up nix generations and store'
   )
 

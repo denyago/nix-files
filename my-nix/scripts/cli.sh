@@ -11,6 +11,7 @@ Usage:
   my-nix apply
   my-nix commit
   my-nix upgrade [args...]
+  my-nix do-release-upgrade [args...]
   my-nix cleanup
 EOF
 }
@@ -56,6 +57,18 @@ upgrade)
     exec "${update_script}" "$@"
   else
     die "No upgrade script found at: ${update_script}"
+  fi
+  ;;
+
+do-release-upgrade)
+  SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  release_upgrade_script="${MY_NIX_DIR:+${MY_NIX_DIR}/base/my-nix/scripts/do-release-upgrade.sh}"
+  release_upgrade_script="${release_upgrade_script:-${SCRIPT_DIR}/do-release-upgrade.sh}"
+
+  if [[ -x "${release_upgrade_script}" ]]; then
+    exec "${release_upgrade_script}" "$@"
+  else
+    die "No release-upgrade script found at: ${release_upgrade_script}"
   fi
   ;;
 
