@@ -52,8 +52,8 @@ latest_github_branch() {
   local repo_slug="$1"
   local branch_prefix="$2"
 
-  { git ls-remote --heads "https://github.com/${repo_slug}.git" "refs/heads/${branch_prefix}-*" 2>/dev/null || true; } \
-    | awk '{print $2}' \
+  { git ls-remote --heads "https://github.com/${repo_slug}.git" 2>/dev/null || true; } \
+    | awk -v prefix="${branch_prefix}" '$2 ~ "^refs/heads/" prefix "-[0-9][0-9]\\.[0-9][0-9]$" { print $2 }' \
     | sed -E 's#refs/heads/##' \
     | sort -V \
     | tail -n 1
@@ -136,7 +136,7 @@ summarize_flake_updates() {
     for line in "${proposed[@]}"; do
       echo "  - ${line}"
     done
-    echo "  Use my-nix do-release-upgrade to apply a release train bump."
+    echo "  Use my-nix do-release-upgrade <release|latest> to apply a release train bump."
   fi
 
   rm -f "${FLAKE_LOCK_BEFORE}"

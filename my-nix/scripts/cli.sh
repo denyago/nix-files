@@ -11,7 +11,7 @@ Usage:
   my-nix apply
   my-nix commit
   my-nix upgrade [args...]
-  my-nix do-release-upgrade [args...]
+  my-nix do-release-upgrade <release|latest> [args...]
   my-nix cleanup
 EOF
 }
