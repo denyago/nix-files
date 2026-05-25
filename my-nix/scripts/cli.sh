@@ -65,8 +65,8 @@ do-release-upgrade)
   release_upgrade_script="${MY_NIX_DIR:+${MY_NIX_DIR}/base/my-nix/scripts/do-release-upgrade.sh}"
   release_upgrade_script="${release_upgrade_script:-${SCRIPT_DIR}/do-release-upgrade.sh}"
 
-  if [[ -x "${release_upgrade_script}" ]]; then
-    exec "${release_upgrade_script}" "$@"
+  if [[ -f "${release_upgrade_script}" ]]; then
+    exec bash "${release_upgrade_script}" "$@"
   else
     die "No release-upgrade script found at: ${release_upgrade_script}"
   fi
