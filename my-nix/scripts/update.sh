@@ -33,6 +33,15 @@ resolve_brew() {
   BREW_BIN="${prefix}/bin/brew"
 }
 
+brew_no_greedy() {
+  env \
+    -u HOMEBREW_UPGRADE_GREEDY \
+    -u HOMEBREW_UPGRADE_GREEDY_CASKS \
+    HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1 \
+    HOMEBREW_NO_ENV_HINTS=1 \
+    "${BREW_BIN}" "$@"
+}
+
 current_flake_release() {
   local file_path="$1"
   local input_name="$2"
@@ -243,13 +252,13 @@ if [[ "$DO_BREW" -eq 1 ]]; then
   if resolve_brew; then
     echo
     echo "🍺 Homebrew: updating taps/formula metadata with ${BREW_BIN}…"
-    "${BREW_BIN}" update
+    brew_no_greedy update
 
     echo
     echo "📦 Homebrew pending upgrades (formulae):"
     # --verbose prints "foo (old) < new" style when available
-    BREW_OUTDATED_FORMULAE="$("${BREW_BIN}" outdated --verbose || true)"
-    BREW_OUTDATED_CASKS="$("${BREW_BIN}" outdated --cask --verbose || true)"
+    BREW_OUTDATED_FORMULAE="$(brew_no_greedy outdated --verbose || true)"
+    BREW_OUTDATED_CASKS="$(brew_no_greedy outdated --cask --verbose || true)"
     if [[ -n "${BREW_OUTDATED_FORMULAE}" || -n "${BREW_OUTDATED_CASKS}" ]]; then
       echo "📣 Proposed Homebrew updates:"
     fi
@@ -291,9 +300,9 @@ apply() {
   if [[ "$DO_BREW" -eq 1 && ( -n "$BREW_OUTDATED_FORMULAE" || -n "$BREW_OUTDATED_CASKS" ) ]]; then
     echo
     echo "⬆️  Applying Homebrew upgrades…"
-    "${BREW_BIN}" upgrade || true
+    brew_no_greedy upgrade || true
     echo "🧹 Cleaning up Homebrew…"
-    "${BREW_BIN}" cleanup || true
+    brew_no_greedy cleanup || true
   fi
 
   if [[ "$NIX_CHANGED" -eq 1 ]]; then
