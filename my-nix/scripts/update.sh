@@ -87,6 +87,7 @@ summarize_release_bumps() {
     proposals+=("${line}")
   done < <(
     propose_release_bump "Nixpkgs release" "flake.nix" "nixpkgs" "NixOS/nixpkgs" "nixos"
+    propose_release_bump "nix-darwin release" "flake.nix" "nix-darwin" "nix-darwin/nix-darwin" "nix-darwin"
     propose_release_bump "Home Manager release" "flake.nix" "home-manager" "nix-community/home-manager" "release"
   )
 
@@ -125,6 +126,9 @@ summarize_flake_updates() {
 
   if grep -q '"nixpkgs"' <<< "${diff_output}"; then
     proposed+=("Nixpkgs package set")
+  fi
+  if grep -q '"nix-darwin"' <<< "${diff_output}"; then
+    proposed+=("nix-darwin release")
   fi
   if grep -q '"home-manager"' <<< "${diff_output}"; then
     proposed+=("Home Manager release")

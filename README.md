@@ -55,11 +55,11 @@ git submodule update --init --recursive
 {
   inputs = {
     self.submodules = true;
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nix-darwin.url = "github:nix-darwin/nix-darwin/master";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
+    nix-darwin.url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
-    home-manager.url = "github:nix-community/home-manager";
+    home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -117,7 +117,7 @@ Attribute keys must be unique across base + overlay (e.g. `cli-tools-extra`, not
 | `my-nix apply` | Apply nix-darwin configuration, then commit & push |
 | `my-nix commit` | Commit & push changes across nvim, base, and overlay repos |
 | `my-nix upgrade` | Pull submodules, update packages/Homebrew within the current release, apply, then commit & push |
-| `my-nix do-release-upgrade <release|latest>` | Bump nixpkgs + Home Manager to a release train or to `latest`, then run the upgrade flow |
+| `my-nix do-release-upgrade <release|latest>` | Bump nixpkgs, nix-darwin, and Home Manager to a release train or to `latest`, then run the upgrade flow |
 | `my-nix cleanup` | Delete old generations, garbage collect, optimise store |
 
 ### Commit flow

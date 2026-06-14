@@ -40,12 +40,14 @@ is_release_name() {
 target_urls() {
   local target="$1"
   if [[ "$target" == "latest" ]]; then
-    printf '%s\n%s\n' \
+    printf '%s\n%s\n%s\n' \
       'github:NixOS/nixpkgs' \
+      'github:nix-darwin/nix-darwin/master' \
       'github:nix-community/home-manager'
   else
-    printf '%s\n%s\n' \
-      "github:NixOS/nixpkgs/nixos-${target}" \
+    printf '%s\n%s\n%s\n' \
+      "github:NixOS/nixpkgs/nixpkgs-${target}-darwin" \
+      "github:nix-darwin/nix-darwin/nix-darwin-${target}" \
       "github:nix-community/home-manager/release-${target}"
   fi
 }
@@ -59,11 +61,17 @@ branch_exists() {
 
 ensure_target_exists() {
   local target="$1"
-  local nixpkgs_branch="nixos-${target}"
+  local nixpkgs_branch="nixpkgs-${target}-darwin"
+  local nix_darwin_branch="nix-darwin-${target}"
   local home_manager_branch="release-${target}"
 
   if ! branch_exists "NixOS/nixpkgs" "${nixpkgs_branch}"; then
     echo "❌ Missing branch: NixOS/nixpkgs#${nixpkgs_branch}"
+    exit 1
+  fi
+
+  if ! branch_exists "nix-darwin/nix-darwin" "${nix_darwin_branch}"; then
+    echo "❌ Missing branch: nix-darwin/nix-darwin#${nix_darwin_branch}"
     exit 1
   fi
 
@@ -76,9 +84,10 @@ ensure_target_exists() {
 bump_in_file() {
   local file_path="$1"
   local nixpkgs_url="$2"
-  local home_manager_url="$3"
+  local nix_darwin_url="$3"
+  local home_manager_url="$4"
 
-  perl -0pi -e "s#github:NixOS/nixpkgs(?:/[^\"]+)?#${nixpkgs_url}#g; s#github:nix-community/home-manager(?:/[^\"]+)?#${home_manager_url}#g" "$file_path"
+  perl -0pi -e "s#github:NixOS/nixpkgs(?:/[^\"]+)?#${nixpkgs_url}#g; s#github:nix-darwin/nix-darwin(?:/[^\"]+)?#${nix_darwin_url}#g; s#github:nix-community/home-manager(?:/[^\"]+)?#${home_manager_url}#g" "$file_path"
 }
 
 pull_submodules() {
@@ -128,19 +137,22 @@ fi
 }
 
 current_nixpkgs="$(current_flake_release "${NIX_DIR}/flake.nix" nixpkgs)"
+current_nix_darwin="$(current_flake_release "${NIX_DIR}/flake.nix" nix-darwin)"
 current_home_manager="$(current_flake_release "${NIX_DIR}/flake.nix" home-manager)"
 {
   read -r nixpkgs_url
+  read -r nix_darwin_url
   read -r home_manager_url
 } < <(target_urls "${TARGET}")
 
 if [[ "${TARGET}" != "latest" ]]; then
   ensure_target_exists "${TARGET}"
 
-  desired_nixpkgs="nixos-${TARGET}"
+  desired_nixpkgs="nixpkgs-${TARGET}-darwin"
+  desired_nix_darwin="nix-darwin-${TARGET}"
   desired_home_manager="release-${TARGET}"
 
-  if [[ "${current_nixpkgs}" == "${desired_nixpkgs}" && "${current_home_manager}" == "${desired_home_manager}" ]]; then
+  if [[ "${current_nixpkgs}" == "${desired_nixpkgs}" && "${current_nix_darwin}" == "${desired_nix_darwin}" && "${current_home_manager}" == "${desired_home_manager}" ]]; then
     echo "✅ Already on ${TARGET}."
     exit 0
   fi
@@ -149,9 +161,11 @@ fi
 echo "📣 Release upgrade target: ${TARGET}"
 if [[ "${TARGET}" == "latest" ]]; then
   echo "  - Nixpkgs: ${current_nixpkgs:-branchless} -> latest commit"
+  echo "  - nix-darwin: ${current_nix_darwin:-branchless} -> master"
   echo "  - Home Manager: ${current_home_manager:-branchless} -> latest commit"
 else
-  echo "  - Nixpkgs: ${current_nixpkgs:-branchless} -> nixos-${TARGET}"
+  echo "  - Nixpkgs: ${current_nixpkgs:-branchless} -> nixpkgs-${TARGET}-darwin"
+  echo "  - nix-darwin: ${current_nix_darwin:-branchless} -> nix-darwin-${TARGET}"
   echo "  - Home Manager: ${current_home_manager:-branchless} -> release-${TARGET}"
 fi
 
@@ -169,8 +183,8 @@ fi
 
 pull_submodules
 
-bump_in_file "${NIX_DIR}/flake.nix" "${nixpkgs_url}" "${home_manager_url}"
-bump_in_file "${NIX_DIR}/base/flake.nix" "${nixpkgs_url}" "${home_manager_url}"
+bump_in_file "${NIX_DIR}/flake.nix" "${nixpkgs_url}" "${nix_darwin_url}" "${home_manager_url}"
+bump_in_file "${NIX_DIR}/base/flake.nix" "${nixpkgs_url}" "${nix_darwin_url}" "${home_manager_url}"
 
 echo
 echo "🔄 Refreshing release lockfiles…"
