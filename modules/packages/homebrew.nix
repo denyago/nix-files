@@ -63,6 +63,24 @@ in
         export FPATH="$(brew --prefix)/share/zsh/site-functions:$FPATH"
       '';
 
+      system.activationScripts.homebrew.text = lib.mkBefore ''
+        # Trust any third-party tap the first time it appears (not already in trust.json).
+        if [ -f "${config.homebrew.prefix}/bin/brew" ]; then
+          trust_file="/Users/${flakeConfig.username}/.homebrew/trust.json"
+          for tap_dir in "${config.homebrew.prefix}/Library/Taps"/*/*/; do
+            tap_owner=$(basename "$(dirname "$tap_dir")")
+            if [ "$tap_owner" != "homebrew" ] && [ "$tap_owner" != "linuxbrew" ]; then
+              tap_name="$tap_owner/$(basename "$tap_dir" | sed 's/^homebrew-//')"
+              if ! grep -qF "\"$tap_name\"" "$trust_file" 2>/dev/null; then
+                echo >&2 "Trusting new tap: $tap_name"
+                sudo --user=${flakeConfig.username} --set-home \
+                  ${config.homebrew.prefix}/bin/brew trust --tap "$tap_name" --quiet 2>/dev/null || true
+              fi
+            fi
+          done
+        fi
+      '';
+
       system.activationScripts.postActivation.text = lib.mkAfter (
         if flakeConfig.homebrewCleanup == "none" then
           ""
