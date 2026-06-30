@@ -21,6 +21,7 @@
         httpyac
 
         git
+        git-lfs
         gh
         lazygit
         graphviz
