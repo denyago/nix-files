@@ -4,7 +4,12 @@ let
 in
 {
   flake.modules.darwin.homebrew =
-    { config, lib, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       cleanupBrewfile = pkgs.writeText "homebrew-cleanup-brewfile" config.homebrew.brewfile;
     in
@@ -34,6 +39,7 @@ in
           "the-unarchiver"
           "istat-menus"
           "grandperspective"
+          "keepingyouawake"
 
           # Browsers / general apps
           "brave-browser"
