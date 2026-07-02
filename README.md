@@ -14,7 +14,7 @@ overlay repo (home or work)
   base/  <--- git submodule pointing here
   modules/
     identity.nix    (username, email, nixDir)
-    packages/       (extra homebrew casks, CLI tools)
+    packages/       (extra Homebrew casks, Nix GUI apps, CLI tools)
     ...
 ```
 
@@ -107,6 +107,32 @@ Create modules under `modules/` in your overlay repo. Each module registers feat
 ```
 
 Attribute keys must be unique across base + overlay (e.g. `cli-tools-extra`, not `cli-tools`).
+
+### macOS GUI apps with Nix
+
+Nix-managed macOS apps should be declared through the shared `my.guiApps` option from overlay-specific Darwin modules:
+
+```nix
+# modules/packages/gui-apps.nix
+{ ... }:
+{
+  flake.modules.darwin.gui-apps-extra = { pkgs, ... }: {
+    my.guiApps = with pkgs; [ librewolf ];
+  };
+}
+```
+
+The base module adds `my.guiApps` to `environment.systemPackages`. nix-darwin then collects package `Applications/*.app` bundles and syncs them into `/Applications/Nix Apps` during activation.
+
+Use this for apps that exist in nixpkgs and produce a usable macOS app bundle. Keep Homebrew casks for apps that are unavailable in nixpkgs, require Homebrew-specific installers, or need vendor-managed background services.
+
+When moving an app from Homebrew casks to Nix:
+
+1. Add the package to `my.guiApps` and apply the configuration.
+2. Verify the app launches from `/Applications/Nix Apps`.
+3. Remove the cask from `homebrew.casks`.
+4. Uninstall the old cask manually if you need to avoid `brew zap` deleting app data.
+5. Re-pin Dock items or reset default apps if macOS still points to the old `/Applications/<App>.app` path.
 
 ## Daily usage (`my-nix`)
 
