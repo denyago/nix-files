@@ -6,6 +6,7 @@
     nix.settings.experimental-features = "nix-command flakes";
 
     nixpkgs.config.allowUnfree = true;
+    nixpkgs.config.permittedInsecurePackages = [ "pnpm-9.15.9" ];
 
     security.pam.services.sudo_local.touchIdAuth = true;
 
