@@ -255,8 +255,10 @@ fi
 
 if [[ "$DO_AUDIT" -eq 1 ]]; then
   echo
-  echo "🔍 CVE audit of ./result…"
-  vulnix --system ./result || true
+  audit_script="${NIX_DIR}/base/my-nix/scripts/audit.sh"
+  if [[ -x "${audit_script}" ]]; then
+    "${audit_script}" ./result || true
+  fi
 fi
 
 BREW_OUTDATED_FORMULAE=""

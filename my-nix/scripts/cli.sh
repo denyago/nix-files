@@ -12,6 +12,7 @@ Usage:
   my-nix commit
   my-nix upgrade [args...]
   my-nix do-release-upgrade <release|latest> [args...]
+  my-nix audit [--init] [--min-score N] <path>
   my-nix cleanup
 EOF
 }
@@ -69,6 +70,17 @@ do-release-upgrade)
     exec bash "${release_upgrade_script}" "$@"
   else
     die "No release-upgrade script found at: ${release_upgrade_script}"
+  fi
+  ;;
+
+audit)
+  SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  audit_script="${MY_NIX_DIR:+${MY_NIX_DIR}/base/my-nix/scripts/audit.sh}"
+  audit_script="${audit_script:-${SCRIPT_DIR}/audit.sh}"
+  if [[ -x "${audit_script}" ]]; then
+    exec "${audit_script}" "$@"
+  else
+    die "No audit script found at: ${audit_script}"
   fi
   ;;
 

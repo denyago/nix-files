@@ -19,6 +19,7 @@
             pkgs.nix
             pkgs.nvfetcher
             pkgs.vulnix
+            pkgs.python3
           ];
           text = ''
             export MY_NIX_DIR="${config.nixDir}"
