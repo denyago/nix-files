@@ -5,6 +5,7 @@ DO_BREW=1
 AUTO_YES=0
 DO_SWITCH=1
 DO_PULL=1
+DO_AUDIT=1
 BREW_BIN=""
 FLAKE_UPDATE_OUTPUT=""
 FLAKE_LOCK_BEFORE=""
@@ -15,6 +16,7 @@ Usage: ./update.sh [options]
 
 Options:
   --no-brew      Skip Homebrew update/preview/upgrade.
+  --no-audit     Skip CVE audit of the built system.
   --yes          Non-interactive: apply changes without prompting.
   --build-only   Update + build + show previews, but do not apply.
   --skip-pull    Internal: skip submodule pull step.
@@ -171,6 +173,10 @@ while [[ $# -gt 0 ]]; do
     DO_SWITCH=0
     shift
     ;;
+  --no-audit)
+    DO_AUDIT=0
+    shift
+    ;;
   --skip-pull)
     DO_PULL=0
     shift
@@ -245,6 +251,12 @@ if [[ "$NIX_CHANGED" -eq 1 ]]; then
   nix run nixpkgs#nvd -- diff /run/current-system ./result || true
 else
   echo "(none)"
+fi
+
+if [[ "$DO_AUDIT" -eq 1 ]]; then
+  echo
+  echo "🔍 CVE audit of ./result…"
+  vulnix --system ./result || true
 fi
 
 BREW_OUTDATED_FORMULAE=""

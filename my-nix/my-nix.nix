@@ -18,6 +18,7 @@
             pkgs.git
             pkgs.nix
             pkgs.nvfetcher
+            pkgs.vulnix
           ];
           text = ''
             export MY_NIX_DIR="${config.nixDir}"
