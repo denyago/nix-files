@@ -257,7 +257,12 @@ if [[ "$DO_AUDIT" -eq 1 ]]; then
   echo
   audit_script="${NIX_DIR}/base/my-nix/scripts/audit.sh"
   if [[ -x "${audit_script}" ]]; then
-    "${audit_script}" ./result || true
+    audit_args=()
+    [[ "$AUTO_YES" -eq 1 ]] && audit_args+=(--yes)
+    "${audit_script}" "${audit_args[@]}" ./result || {
+      echo "❌ Audit did not pass. Aborting."
+      exit 1
+    }
   fi
 fi
 

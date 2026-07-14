@@ -2,6 +2,7 @@
 """CVE audit helper for my-nix. Wraps vulnix with score filtering and whitelist management."""
 
 import argparse
+import datetime
 import json
 import os
 import re
@@ -21,76 +22,162 @@ def run_vulnix_json(system_path: str, whitelist: str | None) -> list:
     return json.loads(raw)
 
 
-def run_vulnix_write_whitelist(system_path: str, dest: str, existing_whitelist: str | None) -> None:
-    cmd = ["vulnix", "--closure", system_path, "--write-whitelist", dest]
-    if existing_whitelist and os.path.exists(existing_whitelist):
-        cmd += ["-w", existing_whitelist]
-    subprocess.run(cmd, capture_output=True)
+def append_whitelist(findings: list, cve_ids: set[str], whitelist: str, expiry_days: int) -> int:
+    """Append whitelist TOML entries for the given CVE IDs. Returns number of entries written."""
+    until = (datetime.date.today() + datetime.timedelta(days=expiry_days)).isoformat()
 
-
-def filter_blocks_below_threshold(toml_content: str, threshold: float) -> list[str]:
-    blocks = re.split(r"(?=\[\[advisories\]\])", toml_content)
-    result = []
-    for block in blocks:
-        if not block.strip().startswith("[[advisories]]"):
+    lines = []
+    for pkg in sorted(findings, key=lambda p: p["name"]):
+        pkg_cves = sorted(set(pkg.get("affected_by", [])) & cve_ids)
+        if not pkg_cves:
             continue
-        scores = [float(s) for s in re.findall(r"cvssv3\s*=\s*([\d.]+)", block)]
-        if not scores or max(scores) < threshold:
-            result.append(block)
-    return result
+        name = pkg["name"]
+        if len(pkg_cves) == 1:
+            lines.append(f'["{name}"]\ncve = "{pkg_cves[0]}"\nuntil = "{until}"')
+        else:
+            cves_str = ", ".join(f'"{c}"' for c in pkg_cves)
+            lines.append(f'["{name}"]\ncve = [ {cves_str} ]\nuntil = "{until}"')
+
+    if not lines:
+        return 0
+
+    existing = ""
+    if os.path.exists(whitelist):
+        with open(whitelist) as f:
+            existing = f.read()
+
+    with open(whitelist, "w") as f:
+        f.write(existing)
+        if existing and not existing.endswith("\n"):
+            f.write("\n")
+        f.write("\n".join(lines) + "\n")
+
+    return len(lines)
 
 
-def cmd_init(system_path: str, whitelist: str, threshold: float) -> None:
+def cmd_init(system_path: str, whitelist: str, threshold: float, expiry_days: int) -> None:
     print(f"🔍 Scanning {system_path} for CVEs below score {threshold} to whitelist…")
 
-    with tempfile.NamedTemporaryFile(suffix=".toml", delete=False) as tmp:
-        tmp_path = tmp.name
+    # Run without whitelist filter to see everything
+    findings = run_vulnix_json(system_path, None)
+    if not findings:
+        print("✅ No findings.")
+        return
 
-    try:
-        run_vulnix_write_whitelist(system_path, tmp_path, whitelist)
+    below_ids: set[str] = set()
+    for pkg in findings:
+        scores = pkg.get("cvssv3_basescore", {})
+        for cve_id in pkg.get("affected_by", []):
+            if float(scores.get(cve_id) or 0) < threshold:
+                below_ids.add(cve_id)
 
-        if not os.path.exists(tmp_path) or os.path.getsize(tmp_path) == 0:
-            print("✅ No findings to whitelist.")
-            return
+    if not below_ids:
+        print(f"✅ Nothing below threshold {threshold} to whitelist.")
+        return
+
+    count = append_whitelist(findings, below_ids, whitelist, expiry_days)
+    print(f"✅ Whitelisted {count} package entry/entries ({len(below_ids)} CVEs below {threshold}) → {whitelist}")
+
+
+def prompt_action(flagged: list, findings: list, system_path: str, whitelist: str, yes: bool, expiry_days: int, threshold: float) -> None:
+    """Prompt the user and act on their choice. Exits non-zero on N."""
+    expiry_date = (datetime.date.today() + datetime.timedelta(days=expiry_days)).isoformat()
+
+    if yes:
+        all_ids = {cve for _, cves, _ in flagged for cve in cves}
+        count = append_whitelist(findings, all_ids, whitelist, expiry_days)
+        print(f"✅ Whitelisted {count} package entry/entries (until {expiry_date}) → {whitelist}")
+        return
+
+    if not sys.stdin.isatty():
+        print("⚠️  Non-interactive mode: aborting due to unresolved CVEs.")
+        sys.exit(1)
+
+    answer = input("\nShall we not continue (N) / accept all (A|Y) / edit the list (E)? [N] ").strip().upper()
+
+    if answer in ("A", "Y"):
+        all_ids = {cve for _, cves, _ in flagged for cve in cves}
+        count = append_whitelist(findings, all_ids, whitelist, expiry_days)
+        print(f"✅ Whitelisted {count} package entry/entries (until {expiry_date}) → {whitelist}")
+
+    elif answer == "E":
+        lines = []
+        for name, cves, scores in sorted(flagged):
+            for cve_id in sorted(cves, key=lambda c: float(scores.get(c) or 0), reverse=True):
+                lines.append(f"{cve_id}  # {name}  CVSSv3={scores.get(cve_id, 'N/A')}")
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tmp:
+            tmp.write("# Delete lines for CVEs you do NOT want to accept.\n")
+            tmp.write(f"# Save and close to whitelist the remaining entries (until {expiry_date}).\n\n")
+            tmp.write("\n".join(lines) + "\n")
+            tmp_path = tmp.name
+
+        editor = os.environ.get("EDITOR", "vi")
+        subprocess.run([editor, tmp_path])
 
         with open(tmp_path) as f:
-            content = f.read()
-
-        blocks = filter_blocks_below_threshold(content, threshold)
-
-        if not blocks:
-            print(f"✅ Nothing below threshold {threshold} to whitelist.")
-            return
-
-        existing = ""
-        if os.path.exists(whitelist):
-            with open(whitelist) as f:
-                existing = f.read()
-
-        with open(whitelist, "w") as f:
-            f.write(existing)
-            if existing and not existing.endswith("\n"):
-                f.write("\n")
-            f.write("".join(blocks))
-
-        print(f"✅ Whitelisted {len(blocks)} finding(s) below score {threshold} → {whitelist}")
-    finally:
+            kept = {
+                l.split()[0] for l in f
+                if l.strip() and not l.startswith("#")
+            }
         os.unlink(tmp_path)
 
+        if not kept:
+            print("No CVEs selected — aborting.")
+            sys.exit(1)
 
-def cmd_audit(system_path: str, whitelist: str, threshold: float) -> None:
+        count = append_whitelist(findings, kept, whitelist, expiry_days)
+        print(f"✅ Whitelisted {count} package entry/entries ({len(kept)} CVEs, until {expiry_date}) → {whitelist}")
+
+        # Re-evaluate with the updated whitelist
+        print("\n🔄 Re-running CVE check with updated whitelist…")
+        findings = run_vulnix_json(system_path, whitelist)
+        flagged = []
+        for pkg in findings:
+            scores = pkg.get("cvssv3_basescore", {})
+            high = [
+                cve_id for cve_id in pkg.get("affected_by", [])
+                if float(scores.get(cve_id) or 0) >= threshold
+            ]
+            if high:
+                flagged.append((pkg["name"], high, scores))
+
+        if not flagged:
+            print(f"✅ No remaining CVEs at or above score {threshold}.")
+            return
+
+        sep = "-" * 72
+        print(f"\n{len(flagged)} remaining package(s) with CVSSv3 ≥ {threshold}:\n")
+        for name, cves, scores in sorted(flagged):
+            print(sep)
+            print(name)
+            print(f"  {'CVE':<50} CVSSv3")
+            for cve_id in sorted(cves, key=lambda c: float(scores.get(c) or 0), reverse=True):
+                url = f"https://nvd.nist.gov/vuln/detail/{cve_id}"
+                print(f"  {url:<50} {scores.get(cve_id, 'N/A')}")
+        print(sep)
+
+        prompt_action(flagged, findings, system_path, whitelist, yes, expiry_days, threshold)
+
+    else:
+        print("Aborting.")
+        sys.exit(1)
+
+
+def cmd_audit(system_path: str, whitelist: str, threshold: float, yes: bool, expiry_days: int) -> None:
     print(f"🔍 CVE audit of {system_path} (CVSSv3 ≥ {threshold})…")
 
     findings = run_vulnix_json(system_path, whitelist)
 
     flagged = []
     for pkg in findings:
+        scores = pkg.get("cvssv3_basescore", {})
         high = [
-            c for c in pkg.get("affected_by", [])
-            if float(c.get("cvssv3") or 0) >= threshold
+            cve_id for cve_id in pkg.get("affected_by", [])
+            if float(scores.get(cve_id) or 0) >= threshold
         ]
         if high:
-            flagged.append((pkg["name"], high))
+            flagged.append((pkg["name"], high, scores))
 
     if not flagged:
         print(f"✅ No CVEs at or above score {threshold}.")
@@ -98,14 +185,16 @@ def cmd_audit(system_path: str, whitelist: str, threshold: float) -> None:
 
     sep = "-" * 72
     print(f"\n{len(flagged)} package(s) with CVSSv3 ≥ {threshold}:\n")
-    for name, cves in sorted(flagged):
+    for name, cves, scores in sorted(flagged):
         print(sep)
         print(name)
         print(f"  {'CVE':<50} CVSSv3")
-        for c in sorted(cves, key=lambda x: float(x.get("cvssv3") or 0), reverse=True):
-            url = f"https://nvd.nist.gov/vuln/detail/{c['cve_id']}"
-            print(f"  {url:<50} {c['cvssv3']}")
+        for cve_id in sorted(cves, key=lambda c: float(scores.get(c) or 0), reverse=True):
+            url = f"https://nvd.nist.gov/vuln/detail/{cve_id}"
+            print(f"  {url:<50} {scores.get(cve_id, 'N/A')}")
     print(sep)
+
+    prompt_action(flagged, findings, system_path, whitelist, yes, expiry_days, threshold)
 
 
 def main() -> None:
@@ -131,12 +220,24 @@ def main() -> None:
         metavar="FILE",
         help="Path to whitelist TOML (default: $MY_NIX_DIR/vulnix-whitelist.toml).",
     )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Non-interactive: accept all findings (whitelist them) without prompting.",
+    )
+    parser.add_argument(
+        "--expiry-days",
+        type=int,
+        default=7,
+        metavar="N",
+        help="Days until whitelist entries expire (default: 7).",
+    )
     args = parser.parse_args()
 
     if args.init:
-        cmd_init(args.path, args.whitelist, args.min_score)
+        cmd_init(args.path, args.whitelist, args.min_score, args.expiry_days)
     else:
-        cmd_audit(args.path, args.whitelist, args.min_score)
+        cmd_audit(args.path, args.whitelist, args.min_score, args.yes, args.expiry_days)
 
 
 if __name__ == "__main__":
