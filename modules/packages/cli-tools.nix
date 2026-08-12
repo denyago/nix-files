@@ -35,6 +35,7 @@
         rustup
 
         bat
+        delta
         exiftool
         gnupg
         pinentry-curses

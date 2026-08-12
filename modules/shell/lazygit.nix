@@ -4,10 +4,9 @@
     programs.lazygit = {
       enable = true;
       settings = {
-        git.paging = {
-          colorArg = "always";
-          pager = "bat --style=plain --color=always --pager=never -l diff";
-        };
+        git.diffRenderers = [
+          { command = "delta --dark --paging=never"; }
+        ];
       };
     };
   };
