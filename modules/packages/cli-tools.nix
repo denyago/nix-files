@@ -23,7 +23,6 @@
         git
         git-lfs
         gh
-        lazygit
         graphviz
         poppler-utils
         yt-dlp
