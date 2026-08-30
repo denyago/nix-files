@@ -23,7 +23,6 @@
         git
         git-lfs
         gh
-        lazygit
         graphviz
         poppler-utils
         yt-dlp
@@ -36,6 +35,7 @@
         rustup
 
         bat
+        delta
         exiftool
         gnupg
         pinentry-curses

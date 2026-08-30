@@ -40,6 +40,7 @@ in
           "istat-menus"
           "grandperspective"
           "keepingyouawake"
+          "betterdisplay"
 
           # Browsers / general apps
           "brave-browser"
