@@ -13,7 +13,7 @@ Usage:
   my-nix upgrade [args...]
   my-nix do-release-upgrade <release|latest> [args...]
   my-nix audit [--init] [--min-score N] <path>
-  my-nix cleanup
+  my-nix cleanup [--keep N | --all]
 EOF
 }
 
@@ -85,10 +85,35 @@ audit)
   ;;
 
 cleanup)
-  echo "Cleaning up Nix (keeping last 5 generations)..."
+  keep=5
+  delete_all=false
 
-  echo "-> Deleting old generations (keep 5)"
-  nix-env --delete-generations +5
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --keep)
+        [[ -n "${2:-}" && "${2}" =~ ^[0-9]+$ ]] || die "--keep requires a positive integer"
+        keep="$2"
+        shift 2
+        ;;
+      --all)
+        delete_all=true
+        shift
+        ;;
+      *)
+        die "Unknown cleanup option: $1"
+        ;;
+    esac
+  done
+
+  if [[ "${delete_all}" == true ]]; then
+    echo "Cleaning up Nix (deleting all old generations)..."
+    echo "-> Deleting all generations except current"
+    nix-env --delete-generations old
+  else
+    echo "Cleaning up Nix (keeping last ${keep} generations)..."
+    echo "-> Deleting old generations (keep ${keep})"
+    nix-env --delete-generations "+${keep}"
+  fi
 
   echo "-> Garbage collecting unreferenced store paths"
   nix-store --gc

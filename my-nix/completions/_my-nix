@@ -11,11 +11,21 @@ _my_nix() {
   )
 
   _arguments -C \
-    '1:command:->cmds' && return 0
+    '1:command:->cmds' \
+    '*::args:->args' && return 0
 
   case $state in
     cmds)
       _describe 'command' commands
+      ;;
+    args)
+      case $words[1] in
+        cleanup)
+          _arguments \
+            '--keep[Number of generations to keep]:count' \
+            '--all[Delete all generations except current]'
+          ;;
+      esac
       ;;
   esac
 }
