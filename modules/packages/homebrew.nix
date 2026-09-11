@@ -49,6 +49,7 @@ in
 
           # Dev tools
           "iterm2"
+          "itermai"
           "visual-studio-code"
           "docker-desktop"
           "obsidian"

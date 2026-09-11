@@ -13,7 +13,7 @@
         source = ./iterm2/DynamicProfiles/denyago.json;
       };
 
-      programs.zsh.initContent = lib.mkOrder 950 ''
+programs.zsh.initContent = lib.mkOrder 950 ''
         # Bundled with iTerm.app — always matches the installed version
         if [ -f /Applications/iTerm.app/Contents/Resources/iterm2_shell_integration.zsh ]; then
           source /Applications/iTerm.app/Contents/Resources/iterm2_shell_integration.zsh
