@@ -160,19 +160,43 @@ outputs = inputs:
 ```
 
 Because `import-tree` imports Base module source rather than Base's flake
-outputs, Base's flake inputs are not exposed transitively. Consumers importing
-Base modules must declare a compatible `llm-agents` flake input themselves,
-following their `nixpkgs` input, for example:
+outputs, Base's flake inputs are not exposed transitively. The consumer overlay
+must declare the inputs referenced by Base's modules in its own `flake.nix`.
+The external input contract for these features is `llm-agents` and
+`nixpkgs-unstable`: `llm-agents` provides the shared agent package overlay,
+while Graphify is provided by unstable as `pkgs.graphify` through a Base
+overlay. The unstable input is independent of the stable system `nixpkgs`:
 
 ```nix
 llm-agents.url = "github:numtide/llm-agents.nix";
 llm-agents.inputs.nixpkgs.follows = "nixpkgs";
+
+nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 ```
 
 The shared-nixpkgs overlay makes agent packages available through the global
 package set as `pkgs.llm-agents.<name>` (for example,
 `pkgs.llm-agents.opencode`). Base only provides the overlay; it does not
-install any agents.
+install any agents. The Graphify feature is opt-in from Base through
+`programs.graphify.enable`, and its required `assistant` selects the global
+upstream assistant integration as well as installing `pkgs.graphify`. After
+Home Manager has linked the profile, activation runs
+`${pkgs.graphify}/bin/graphify install --platform <assistant>` from `$HOME`;
+it respects Home Manager dry-run mode and does not use sudo. It installs
+globally via Graphify's upstream installer. The current home overlay selects
+OpenCode. A future work profile can opt into global Claude integration with
+this exact Home Manager snippet:
+
+```nix
+programs.graphify = {
+  enable = true;
+  assistant = "claude";
+};
+```
+
+Graphify project installs remain manual. This feature does not write
+manually-managed skill files, manage Graphify stamps/cache/locks, or configure
+project-scoped integration.
 
 Overlay modules register under unique attribute keys (e.g. `cli-tools-extra`, `homebrew-extra`) so they don't collide with base module keys.
 
