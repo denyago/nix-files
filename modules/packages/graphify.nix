@@ -38,7 +38,15 @@
           if [[ -n "''${DRY_RUN:-}" ]]; then
             echo "Skipping Graphify install in Home Manager dry-run mode."
           else
-            (cd "$HOME" && ${pkgs.graphify}/bin/graphify install --platform ${lib.escapeShellArg cfg.assistant})
+            (
+              cd "$HOME"
+              ${pkgs.graphify}/bin/graphify install --platform ${lib.escapeShellArg cfg.assistant}
+
+              if [[ ${lib.escapeShellArg cfg.assistant} == opencode ]]; then
+                mkdir -p "$HOME/.config/opencode/plugins"
+                mv "$HOME/.opencode/plugins/graphify.js" "$HOME/.config/opencode/plugins/graphify.js"
+              fi
+            )
           fi
         '';
       };
