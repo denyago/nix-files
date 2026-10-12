@@ -176,15 +176,10 @@ nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
 The shared-nixpkgs overlay makes agent packages available through the global
 package set as `pkgs.llm-agents.<name>` (for example,
-`pkgs.llm-agents.opencode`). Base only provides the overlay; it does not
-install any agents. The home overlay installs both OpenCode v1 and v2 during
-the migration period. Use `opencode2` as the primary command; the `opencode`
-command is retained temporarily for rollback. OpenCode v2 reads the migrated
-`modules/opencode/config/opencode.json` schema and quota plugin configuration.
-The first v2 start may import v1 authentication data, but automatic auth
-migration is not guaranteed. Verify Grafana MCP and provider authentication
-after starting; complete sign-in again if needed. `/quota_status` can verify
-the quota plugin is available.
+`pkgs.llm-agents.opencode2`). Base only provides the overlay; it does not
+install any agents. The home overlay installs OpenCode v2 as `opencode2` and
+uses the v2 `modules/opencode/config/opencode.json` schema and quota plugin
+configuration. `/quota_status` can verify the quota plugin is available.
 
 The Graphify feature is opt-in from Base through `programs.graphify.enable`,
 and its required `assistant` selects the global integration behavior as well
@@ -205,10 +200,7 @@ programs.graphify = {
 };
 ```
 
-If rollback is needed during migration, restore the previous v1 OpenCode
-configuration first (the migrated config uses the v2 schema), then invoke the
-retained `opencode` command. `opencode2` remains the primary command. Graphify
-project installs remain manual. This feature does not manage Graphify
+Graphify project installs remain manual. This feature does not manage Graphify
 stamps/cache/locks or configure project-scoped integration.
 
 Overlay modules register under unique attribute keys (e.g. `cli-tools-extra`, `homebrew-extra`) so they don't collide with base module keys.
