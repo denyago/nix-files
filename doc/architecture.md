@@ -159,6 +159,21 @@ outputs = inputs:
   };
 ```
 
+Because `import-tree` imports Base module source rather than Base's flake
+outputs, Base's flake inputs are not exposed transitively. Consumers importing
+Base modules must declare a compatible `llm-agents` flake input themselves,
+following their `nixpkgs` input, for example:
+
+```nix
+llm-agents.url = "github:numtide/llm-agents.nix";
+llm-agents.inputs.nixpkgs.follows = "nixpkgs";
+```
+
+The shared-nixpkgs overlay makes agent packages available through the global
+package set as `pkgs.llm-agents.<name>` (for example,
+`pkgs.llm-agents.opencode`). Base only provides the overlay; it does not
+install any agents.
+
 Overlay modules register under unique attribute keys (e.g. `cli-tools-extra`, `homebrew-extra`) so they don't collide with base module keys.
 
 ## Pinning external binaries with nvfetcher
