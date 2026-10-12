@@ -177,15 +177,26 @@ nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 The shared-nixpkgs overlay makes agent packages available through the global
 package set as `pkgs.llm-agents.<name>` (for example,
 `pkgs.llm-agents.opencode`). Base only provides the overlay; it does not
-install any agents. The Graphify feature is opt-in from Base through
-`programs.graphify.enable`, and its required `assistant` selects the global
-upstream assistant integration as well as installing `pkgs.graphify`. After
-Home Manager has linked the profile, activation runs
-`${pkgs.graphify}/bin/graphify install --platform <assistant>` from `$HOME`;
-it respects Home Manager dry-run mode and does not use sudo. It installs
-globally via Graphify's upstream installer. The current home overlay selects
-OpenCode. A future work profile can opt into global Claude integration with
-this exact Home Manager snippet:
+install any agents. The home overlay installs both OpenCode v1 and v2 during
+the migration period. Use `opencode2` as the primary command; the `opencode`
+command is retained temporarily for rollback. OpenCode v2 reads the migrated
+`modules/opencode/config/opencode.json` schema and quota plugin configuration.
+The first v2 start may import v1 authentication data, but automatic auth
+migration is not guaranteed. Verify Grafana MCP and provider authentication
+after starting; complete sign-in again if needed. `/quota_status` can verify
+the quota plugin is available.
+
+The Graphify feature is opt-in from Base through `programs.graphify.enable`,
+and its required `assistant` selects the global integration behavior as well
+as installing `pkgs.graphify`. For `assistant = "opencode"`, activation runs
+`${pkgs.graphify}/bin/graphify install --platform agents` from `$HOME`, which
+installs the generic global Agent Skill compatible with OpenCode v2. It does
+not install Graphify's v1 OpenCode JavaScript plugin, and removes only the two
+known obsolete `graphify.js` plugin files from OpenCode's plugin locations.
+For `assistant = "claude"`, activation continues to run
+`${pkgs.graphify}/bin/graphify install --platform claude`. Both paths respect
+Home Manager dry-run mode and do not use sudo. A future work profile can opt
+into global Claude integration with this exact Home Manager snippet:
 
 ```nix
 programs.graphify = {
@@ -194,9 +205,11 @@ programs.graphify = {
 };
 ```
 
-Graphify project installs remain manual. This feature does not write
-manually-managed skill files, manage Graphify stamps/cache/locks, or configure
-project-scoped integration.
+If rollback is needed during migration, restore the previous v1 OpenCode
+configuration first (the migrated config uses the v2 schema), then invoke the
+retained `opencode` command. `opencode2` remains the primary command. Graphify
+project installs remain manual. This feature does not manage Graphify
+stamps/cache/locks or configure project-scoped integration.
 
 Overlay modules register under unique attribute keys (e.g. `cli-tools-extra`, `homebrew-extra`) so they don't collide with base module keys.
 

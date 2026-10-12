@@ -22,7 +22,7 @@
             ]
           );
           default = null;
-          description = "Assistant to configure with the global Graphify integration.";
+          description = "Assistant to configure with the global Graphify integration; opencode uses the v2-compatible Agent Skill.";
         };
       };
 
@@ -40,11 +40,11 @@
           else
             (
               cd "$HOME"
-              ${pkgs.graphify}/bin/graphify install --platform ${lib.escapeShellArg cfg.assistant}
-
               if [[ ${lib.escapeShellArg cfg.assistant} == opencode ]]; then
-                mkdir -p "$HOME/.config/opencode/plugins"
-                mv "$HOME/.opencode/plugins/graphify.js" "$HOME/.config/opencode/plugins/graphify.js"
+                ${pkgs.graphify}/bin/graphify install --platform agents
+                rm -f "$HOME/.config/opencode/plugins/graphify.js" "$HOME/.opencode/plugins/graphify.js"
+              else
+                ${pkgs.graphify}/bin/graphify install --platform claude
               fi
             )
           fi
