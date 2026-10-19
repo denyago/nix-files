@@ -11,6 +11,7 @@ Usage:
   my-nix apply
   my-nix commit
   my-nix upgrade [args...]
+  my-nix verify [--eval-only]
   my-nix do-release-upgrade <release|latest> [args...]
   my-nix audit [--init] [--min-score N] <path>
   my-nix cleanup [--keep N | --all]
@@ -58,6 +59,18 @@ upgrade)
     exec "${update_script}" "$@"
   else
     die "No upgrade script found at: ${update_script}"
+  fi
+  ;;
+
+verify)
+  SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  verify_script="${MY_NIX_DIR:+${MY_NIX_DIR}/base/my-nix/scripts/verify.sh}"
+  verify_script="${verify_script:-${SCRIPT_DIR}/verify.sh}"
+
+  if [[ -x "${verify_script}" ]]; then
+    exec "${verify_script}" "$@"
+  else
+    die "No verify script found at: ${verify_script}"
   fi
   ;;
 

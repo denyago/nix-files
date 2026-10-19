@@ -222,6 +222,10 @@ else
 fi
 
 echo ""
+echo "🔎 Checking flake inputs…"
+"${NIX_DIR}/base/my-nix/scripts/check-inputs.sh"
+
+echo ""
 echo "🔄 Updating flake inputs (flake.lock)…"
 summarize_release_bumps
 update_flake

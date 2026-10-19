@@ -6,6 +6,7 @@ _my_nix() {
     'apply:Apply nix-darwin configuration'
     'commit:Commit and push changes across all repos'
     'upgrade:Upgrade nix and Homebrew packages'
+    'verify:Build the system without applying it'
     'do-release-upgrade:Bump to the latest release train'
     'cleanup:Clean up nix generations and store'
   )
@@ -20,6 +21,10 @@ _my_nix() {
       ;;
     args)
       case $words[1] in
+        verify)
+          _arguments \
+            '--eval-only[Only evaluate, skip building]'
+          ;;
         cleanup)
           _arguments \
             '--keep[Number of generations to keep]:count' \
