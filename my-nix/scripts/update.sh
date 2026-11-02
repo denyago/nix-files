@@ -40,9 +40,9 @@ brew_no_greedy() {
   # HEAD, so brew's attempt to persist "analytics message seen" fails with
   # "fatal: not in a git directory" and aborts `brew update`.
   env \
-    HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1 \
     -u HOMEBREW_UPGRADE_GREEDY \
     -u HOMEBREW_UPGRADE_GREEDY_CASKS \
+    HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1 \
     HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1 \
     HOMEBREW_NO_ENV_HINTS=1 \
     HOMEBREW_NO_INTERACTIVE=1 \
