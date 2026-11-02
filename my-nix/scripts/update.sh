@@ -36,7 +36,11 @@ resolve_brew() {
 }
 
 brew_no_greedy() {
+  # HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT: nix-homebrew's .git stub has no valid
+  # HEAD, so brew's attempt to persist "analytics message seen" fails with
+  # "fatal: not in a git directory" and aborts `brew update`.
   env \
+    HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1 \
     -u HOMEBREW_UPGRADE_GREEDY \
     -u HOMEBREW_UPGRADE_GREEDY_CASKS \
     HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1 \
