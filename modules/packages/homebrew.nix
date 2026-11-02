@@ -34,13 +34,12 @@ in
           # Core utilities
           "alt-tab"
           "bartender"
-          "monitorcontrol"
+          "betterdisplay"
           "rectangle"
           "the-unarchiver"
           "istat-menus"
           "grandperspective"
           "keepingyouawake"
-          "betterdisplay"
 
           # Browsers / general apps
           "brave-browser"
