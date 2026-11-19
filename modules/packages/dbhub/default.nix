@@ -180,12 +180,31 @@
                 default = null;
                 description = "Source ids included in this config; null = all enabled sources.";
               };
+              options.register = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Register this config as a Claude Code MCP server (needs programs.dbhub.claudeCode.enable).";
+              };
             }
           );
           default = {
             default = { };
           };
           description = "Named config files written to ~/.config/dbhub/<name>.toml. Use several to switch sets of databases (e.g. with/without production) without a rebuild.";
+        };
+
+        claudeCode = {
+          enable = lib.mkEnableOption "registering the generated configs as Claude Code user-scope MCP servers on every home-manager switch";
+          package = lib.mkOption {
+            type = lib.types.nullOr lib.types.package;
+            default = null;
+            description = "Claude Code package providing the `claude` CLI. Null = use `claude` from PATH.";
+          };
+          serverPrefix = lib.mkOption {
+            type = lib.types.str;
+            default = "db";
+            description = "MCP servers are named <serverPrefix>-<config name>.";
+          };
         };
       };
 
@@ -206,6 +225,59 @@
           }) enabledSources;
 
         home.packages = [ cfg.package ];
+
+        # Claude keeps MCP servers in the mutable ~/.claude.json, which can't be a nix
+        # symlink, so register through the CLI. Idempotent: unchanged entries are left
+        # alone, changed ones replaced, and stale ones with our prefix removed.
+        home.activation.dbhubClaudeMcp = lib.mkIf cfg.claudeCode.enable (
+          lib.hm.dag.entryAfter [ "linkGeneration" ] (
+            let
+              claude = if cfg.claudeCode.package == null then "claude" else lib.getExe cfg.claudeCode.package;
+              jq = lib.getExe pkgs.jq;
+              prefix = cfg.claudeCode.serverPrefix;
+              registered = lib.filterAttrs (_: c: c.register) cfg.configs;
+              entry = cname: {
+                name = "${prefix}-${cname}";
+                command = lib.getExe cfg.package;
+                args = [
+                  "--transport"
+                  "stdio"
+                  "--config"
+                  "${config.xdg.configHome}/dbhub/${cname}.toml"
+                ];
+              };
+              entries = map entry (lib.attrNames registered);
+              names = map (e: e.name) entries;
+              register = e: ''
+                want=$(${jq} -cn --arg c ${lib.escapeShellArg e.command} '[$c, ${builtins.toJSON e.args}]')
+                have=$(${jq} -c --arg n ${lib.escapeShellArg e.name} '.mcpServers[$n] // empty | [.command, .args]' "$claude_json" 2>/dev/null || true)
+                if [[ "$have" != "$want" ]]; then
+                  run ${claude} mcp remove --scope user ${lib.escapeShellArg e.name} >/dev/null 2>&1 || true
+                  run ${claude} mcp add-json --scope user ${lib.escapeShellArg e.name} ${
+                    lib.escapeShellArg (
+                      builtins.toJSON {
+                        type = "stdio";
+                        inherit (e) command args;
+                      }
+                    )
+                  } || echo "warning: could not register MCP server ${e.name} with Claude Code" >&2
+                fi
+              '';
+            in
+            ''
+              claude_json="$HOME/.claude.json"
+              wanted=" ${lib.concatStringsSep " " names} "
+              if [[ -f "$claude_json" ]]; then
+                for name in $(${jq} -r '.mcpServers // {} | keys[] | select(startswith("${prefix}-"))' "$claude_json"); do
+                  if [[ "$wanted" != *" $name "* ]]; then
+                    run ${claude} mcp remove --scope user "$name" || true
+                  fi
+                done
+              fi
+              ${lib.concatMapStrings register entries}
+            ''
+          )
+        );
 
         xdg.configFile = lib.mapAttrs' (
           cname: c: lib.nameValuePair "dbhub/${cname}.toml" { source = renderConfig (configSources c); }
