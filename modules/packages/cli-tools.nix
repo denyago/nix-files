@@ -50,7 +50,7 @@
         duckdb
         usql
 
-        awscli
+        awscli2
         go-task
         nvfetcher
 

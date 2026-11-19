@@ -34,6 +34,8 @@ modules/
 
   packages/                 Package management
     homebrew.nix            Shared Homebrew casks and brews
+    dbhub/                  DBHub database MCP server: package + `programs.dbhub` options
+                            (sources/configs rendered to ~/.config/dbhub/<name>.toml)
     cli-tools.nix           Shared CLI tools (ripgrep, git, nodejs, go, etc.)
     fonts.nix               Nerd Fonts
     github-distributed/     Pre-built binaries fetched from GitHub releases (see below)
@@ -269,6 +271,10 @@ nvfetcher -c nvfetcher.toml -o _sources
 ```
 
 4. Commit `nvfetcher.toml`, `_sources/generated.nix`, and `my-tool.nix` together — the lockfile belongs in git, same as `flake.lock`.
+
+### Source-built packages
+
+nvfetcher also tracks sources for packages built from source. `dbhub/_package.nix` reads `sources.dbhub` from `github-distributed/_sources/generated.nix`. Hashes nvfetcher can't compute (the pnpm dependency hash) stay in the package file: after an upgrade, set it to `lib.fakeHash`, build once, and paste the reported hash.
 
 ### Auto-update
 

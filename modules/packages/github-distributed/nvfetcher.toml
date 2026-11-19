@@ -1,0 +1,7 @@
+# Source specs for packages not in nixpkgs. Regenerate with:
+#   nvfetcher -c nvfetcher.toml -o _sources   (or `my-nix upgrade`)
+
+[dbhub]
+src.github = "bytebase/dbhub"
+src.use_latest_release = true
+fetch.github = "bytebase/dbhub"
