@@ -82,6 +82,11 @@
                 description = "Named AWS profile (shared config, incl. SSO or credential_process). Null = default SDK credential chain.";
               };
             };
+            lazy = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              description = "Defer connecting until the first query, so an unreachable database (e.g. VPN down) doesn't block server startup.";
+            };
             readonly = lib.mkOption {
               type = lib.types.bool;
               default = true;
@@ -112,6 +117,7 @@
             dsn
             sslmode
             ;
+          lazy = if s.lazy then true else null;
           aws_iam_auth = if s.awsIam.enable then true else null;
           aws_region = if s.awsIam.enable then s.awsIam.region else null;
           aws_profile = if s.awsIam.enable then s.awsIam.profile else null;
