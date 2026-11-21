@@ -8,13 +8,13 @@
 {
   dbhub = {
     pname = "dbhub";
-    version = "v2.0.0";
+    version = "v2.1.0";
     src = fetchFromGitHub {
       owner = "bytebase";
       repo = "dbhub";
-      rev = "v2.0.0";
+      rev = "v2.1.0";
       fetchSubmodules = false;
-      sha256 = "sha256-VOkOBKnjtiivJGJvMhAIgDHeDJksPYDs8RDyMWhpfqc=";
+      sha256 = "sha256-bePo55sW0RVmsD6laIOX4XWjWy/7kaKsEiPGCD9QDVw=";
     };
   };
 }
