@@ -14,12 +14,16 @@ stdenv.mkDerivation (finalAttrs: {
   inherit (sources.dbhub) src;
 
   pnpmDeps = fetchPnpmDeps {
-    inherit (finalAttrs) pname version src;
+    inherit (finalAttrs) version src;
+    # fetchPnpmDeps names its output "<pname>-pnpm-deps". Embedding the version
+    # makes a source bump produce a fresh derivation, so nix reports the stale
+    # hash below as a mismatch instead of silently reusing the old deps from the
+    # store. `my-nix upgrade` then rewrites it (my-nix/scripts/build-fix-hashes.sh).
+    pname = "${finalAttrs.pname}-${finalAttrs.version}";
     inherit pnpm;
     fetcherVersion = 3;
-    # Not tracked by nvfetcher: after bumping the source, set to lib.fakeHash,
-    # build once, and paste the "got:" hash.
-    hash = "sha256-idMAqd4iXAeFSOZ5Vk0yFtGWQyvRLWCzOcc9GuTitbo=";
+    # Not tracked by nvfetcher; refreshed automatically by `my-nix upgrade`.
+    hash = "sha256-+nLWL7Ys1vyQ4VSxTRreG/UwFUcXvIO+G1dWs0I5xjU=";
   };
 
   nativeBuildInputs = [

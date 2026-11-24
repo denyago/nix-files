@@ -274,7 +274,7 @@ nvfetcher -c nvfetcher.toml -o _sources
 
 ### Source-built packages
 
-nvfetcher also tracks sources for packages built from source. `dbhub/_package.nix` reads `sources.dbhub` from `github-distributed/_sources/generated.nix`. Hashes nvfetcher can't compute (the pnpm dependency hash) stay in the package file: after an upgrade, set it to `lib.fakeHash`, build once, and paste the reported hash.
+nvfetcher also tracks sources for packages built from source. `dbhub/_package.nix` reads `sources.dbhub` from `github-distributed/_sources/generated.nix`. Hashes nvfetcher can't compute (the pnpm dependency hash, `cargoHash`, `vendorHash`, ...) stay literally in the package file and are refreshed automatically: `my-nix upgrade` builds through `my-nix/scripts/build-fix-hashes.sh`, which catches nix's `hash mismatch in fixed-output derivation` error, rewrites the `specified:` hash with the `got:` one in the `.nix` source, and retries. For this to work the dependency derivation's name must change with the version, otherwise nix reuses the old output from the store and never reports a mismatch. `cargoDeps`, `buildGoModule` and `buildNpmPackage` already do; for `fetchPnpmDeps` pass `pname = "${finalAttrs.pname}-${finalAttrs.version}"` (see `dbhub/_package.nix`).
 
 ### Auto-update
 

@@ -245,7 +245,9 @@ done
 
 echo
 echo "🔨 Building new system (no activation)…"
-darwin-rebuild build --flake .
+# Refreshes stale fixed-output hashes (pnpmDeps, cargoHash, ...) in the nix
+# sources after a source bump, then retries; see build-fix-hashes.sh.
+"${NIX_DIR}/base/my-nix/scripts/build-fix-hashes.sh" darwin-rebuild build --flake .
 
 NIX_CHANGED=0
 if [[ "$(realpath /run/current-system)" != "$(realpath ./result)" ]]; then
